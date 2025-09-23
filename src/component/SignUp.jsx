@@ -4,7 +4,7 @@ import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import "./SignUp.css";
 
-function SignUp() {
+const SignUp = () => {
   const [formData, setFormData] = useState({
     fullName: "",
     email: "",
@@ -13,7 +13,6 @@ function SignUp() {
     password: "",
     confirmPassword: "",
   });
-
   const [errors, setErrors] = useState({});
   const [termsAccepted, setTermsAccepted] = useState(false);
 
@@ -26,67 +25,96 @@ function SignUp() {
     confirmPassword: useRef(null),
   };
 
+  // Field configuration
+  const fields = [
+    {
+      name: "fullName",
+      label: "Full Name",
+      type: "text",
+      placeholder: "Enter full name",
+      validate: (value) => {
+        if (!value.trim()) return "Full name is required";
+        if (!/^[A-Z][a-zA-Z]*$/.test(value)) return "Must start with capital & contain only letters";
+        if (value.length < 3 || value.length > 15) return "Name must be 3-15 characters";
+        return "";
+      },
+      format: (value) => {
+        let newValue = value.replace(/[^a-zA-Z]/g, "");
+        if (newValue.length > 0) newValue = newValue.charAt(0).toUpperCase() + newValue.slice(1);
+        return newValue;
+      },
+    },
+    {
+      name: "email",
+      label: "Email",
+      type: "text",
+      placeholder: "Enter email",
+      validate: (value) => {
+        if (!value) return "Email is required";
+        if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)) return "Enter a valid email";
+        return "";
+      },
+    },
+    {
+      name: "gender",
+      label: "Gender",
+      type: "select",
+      options: ["Male", "Female", "Trans"],
+      validate: (value) => (!value ? "Gender is required" : ""),
+    },
+    {
+      name: "mobilenumber",
+      label: "Mobile Number",
+      type: "text",
+      placeholder: "10-digit number",
+      validate: (value) => {
+        if (!value.trim()) return "Mobile number is required";
+        if (!/^\d{10}$/.test(value)) return "Enter a valid 10-digit number";
+        return "";
+      },
+    },
+    {
+      name: "password",
+      label: "Password",
+      type: "password",
+      validate: (value) => {
+        if (!value) return "Password is required";
+        if (value.length < 6) return "Password must be at least 6 characters";
+        if (!/^(?=.*[a-zA-Z])(?=.*[0-9])/.test(value))
+          return "Password must contain at least 1 letter and 1 number";
+        return "";
+      },
+    },
+    {
+      name: "confirmPassword",
+      label: "Confirm Password",
+      type: "password",
+      validate: (value) =>
+        value !== formData.password ? "Passwords do not match" : value ? "" : "Please confirm password",
+    },
+  ];
+
+  // Validate a single field
   const validateField = (name, value) => {
-    let error = "";
-
-    if (name === "fullName") {
-      if (!value.trim()) error = "Full name is required";
-      else if (!/^[A-Z][a-zA-Z]*$/.test(value))
-        error = "Must start with capital & contain only letters";
-      else if (value.length < 3 || value.length > 15)
-        error = "Name must be 3-15 characters";
-    }
-
-    if (name === "email") {
-      if (!value) error = "Email is required";
-      else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value))
-        error = "Enter a valid email";
-    }
-
-    if (name === "gender") {
-      if (!value) error = "Gender is required";
-    }
-
-    if (name === "mobilenumber") {
-      if (!value.trim()) error = "Mobile number is required";
-      else if (!/^\d{10}$/.test(value)) error = "Enter a valid 10-digit number";
-    }
-
-    if (name === "password") {
-      if (!value) error = "Password is required";
-      else if (value.length < 6) error = "Password must be at least 6 characters";
-      else if (!/^(?=.*[a-zA-Z])(?=.*[0-9])/.test(value))
-        error = "Password must contain at least 1 letter and 1 number";
-    }
-
-    if (name === "confirmPassword") {
-      if (!value) error = "Please confirm password";
-      else if (value !== formData.password) error = "Passwords do not match";
-    }
-
+    const field = fields.find((f) => f.name === name);
+    const error = field?.validate(value) || "";
     setErrors((prev) => ({ ...prev, [name]: error }));
     return error;
   };
 
   const validateAll = () => {
     let firstErrorField = null;
-    Object.keys(formData).forEach((field) => {
-      const error = validateField(field, formData[field]);
-      if (error && !firstErrorField) firstErrorField = field;
+    fields.forEach(({ name }) => {
+      const error = validateField(name, formData[name]);
+      if (error && !firstErrorField) firstErrorField = name;
     });
     return firstErrorField;
   };
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    let newValue = value;
-
-    if (name === "fullName") {
-      newValue = newValue.replace(/[^a-zA-Z]/g, "");
-      if (newValue.length > 0)
-        newValue = newValue.charAt(0).toUpperCase() + newValue.slice(1);
-    }
-
+    const field = fields.find((f) => f.name === name);
+    const newValue = field?.format ? field.format(value) : value;
     setFormData((prev) => ({ ...prev, [name]: newValue }));
     validateField(name, newValue);
   };
@@ -106,9 +134,9 @@ function SignUp() {
     }
 
     try {
-      const response = await fetch('http://127.0.0.1:8000/api/signup', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+    const response = await fetch("http://127.0.0.1:8000/api/signup", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           fullname: formData.fullName,
           email: formData.email,
@@ -120,7 +148,7 @@ function SignUp() {
 
       const data = await response.json();
 
-      if (data.status === 'success') {
+      if (data.status === "success") {
         toast.success(data.message);
         setFormData({
           fullName: "",
@@ -134,80 +162,78 @@ function SignUp() {
         setTermsAccepted(false);
         refs.fullName.current.focus();
       } else {
-        toast.error(data.message || 'Registration failed');
+        toast.error(data.message || "Registration failed");
       }
     } catch (error) {
-      console.error('Registration error:', error);
-      toast.error('Network error. Please check if the backend server is running.');
+      console.error("Registration error:", error);
+      toast.error("Network error. Please check if the backend server is running.");
     }
   };
 
+ 
+  const fieldPairs = [
+    ["fullName", "email"],
+    ["gender", "mobilenumber"],
+    ["password", "confirmPassword"],
+  ];
+
   return (
-    <div className="app">
+    <div className="apps">
       <h1>Sign Up</h1>
       <form className="input-container" onSubmit={handleSubmit} noValidate>
-        {/* Full Name & Email */}
-        <div className="input-row two-cols">
-          <div className="input-container">
-            <label htmlFor="fullName">Full Name <span className="required">*</span></label>
-            <input ref={refs.fullName} type="text" id="fullName" name="fullName" placeholder="Enter full name" value={formData.fullName} onChange={handleChange} onBlur={(e) => validateField("fullName", e.target.value)} />
-            <span className="error">{errors.fullName}</span>
-          </div>
-          <div className="input-container">
-            <label htmlFor="email">Email <span className="required">*</span></label>
-            <input ref={refs.email} type="text" id="email" name="email" placeholder="Enter email" value={formData.email} onChange={handleChange} onBlur={(e) => validateField("email", e.target.value)} />
-            <span className="error">{errors.email}</span>
-          </div>
-        </div>
+        {fieldPairs.map((pair, idx) => (
+          <div key={idx} className="input-row two-cols">
+            {pair.map((name) => {
+              const field = fields.find((f) => f.name === name);
+              return (
+                <div key={name} className="input-container">
+                  <label htmlFor={name}>
+                    {field.label} <span className="required">*</span>
+                  </label>
+                  {field.type === "select" ? (
+                    <select ref={refs[name]} id={name} name={name} value={formData[name]} onChange={handleChange}
+                      onBlur={(e) => validateField(name, e.target.value)}
+                    >
+                      <option value="">--Select--</option>
+                      {field.options.map((opt) => (
+                        <option key={opt} value={opt}>
+                          {opt}
+                        </option>
+                      ))}
+                    </select>
+                  ) : (
+                    <input
+                      ref={refs[name]} type={field.type} id={name} name={name} placeholder={field.placeholder || ""} value={formData[name]}
+                      onChange={handleChange}
+                      onBlur={(e) => validateField(name, e.target.value)}
+                    />
+                  )}
 
-        {/* Gender & Mobile */}
-        <div className="input-row two-cols">
-          <div className="input-container">
-            <label htmlFor="gender">Gender <span className="required">*</span></label>
-            <select ref={refs.gender} id="gender" name="gender" value={formData.gender} onChange={handleChange} onBlur={(e) => validateField("gender", e.target.value)}>
-              <option value="">--Select--</option>
-              <option value="Male">Male</option>
-              <option value="Female">Female</option>
-              <option value="Trans">Trans</option>
-            </select>
-            <span className="error">{errors.gender}</span>
+                  <span className="error">{errors[name]}</span>
+                </div>
+              );
+            })}
           </div>
-          <div className="input-container">
-            <label htmlFor="mobilenumber">Mobile Number <span className="required">*</span></label>
-            <input ref={refs.mobilenumber} type="text" id="mobilenumber" name="mobilenumber" placeholder="10-digit number" value={formData.mobilenumber} onChange={handleChange} onBlur={(e) => validateField("mobilenumber", e.target.value)} />
-            <span className="error">{errors.mobilenumber}</span>
-          </div>
-        </div>
+        ))}
 
-        {/* Password & Confirm Password */}
-        <div className="input-row two-cols">
-          <div className="input-container">
-            <label htmlFor="password">Password <span className="required">*</span></label>
-            <input ref={refs.password} type="password" id="password" name="password" value={formData.password} onChange={handleChange} onBlur={(e) => validateField("password", e.target.value)} />
-            <span className="error">{errors.password}</span>
-          </div>
-          <div className="input-container">
-            <label htmlFor="confirmPassword">Confirm Password <span className="required">*</span></label>
-            <input ref={refs.confirmPassword} type="password" id="confirmPassword" name="confirmPassword" value={formData.confirmPassword} onChange={handleChange} onBlur={(e) => validateField("confirmPassword", e.target.value)} />
-            <span className="error">{errors.confirmPassword}</span>
-          </div>
-        </div>
-
-        {/* Terms & Submit */}
-        <div className="input-row">
+        <div className="checkbox-container">
           <label>
-            <input type="checkbox" checked={termsAccepted} onChange={(e) => setTermsAccepted(e.target.checked)} /> I accept the <a href="#">Terms & Conditions</a> <span className="required">*</span>
+            <input type="checkbox" checked={termsAccepted} onChange={(e) => setTermsAccepted(e.target.checked)} /> I accept the{" "}
+            <a href="#">Terms & Conditions</a> <span className="required">*</span>
           </label>
         </div>
 
-        <button type="submit" className="btn-submit">Submit</button>
+        <button type="submit" className="btn-submit">
+          Submit
+        </button>
       </form>
 
-      <div className="links-row">
-        <p>Already have an account? <Link to="/signin">Sign In</Link></p>
+      <div className="link-row">
+        <p>
+          Already have an account? <Link to="/signin">Sign In</Link>
+        </p>
       </div>
 
-      {/* Toast Container */}
       <ToastContainer
         position="top-right"
         autoClose={3000}
@@ -218,6 +244,6 @@ function SignUp() {
       />
     </div>
   );
-}
+};
 
 export default SignUp;

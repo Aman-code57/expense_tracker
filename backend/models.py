@@ -2,7 +2,7 @@
 from sqlalchemy import Column, Integer, String, DateTime, Float, Text, ForeignKey
 from sqlalchemy.orm import relationship
 from datetime import datetime
-from backend.database import Base
+from database import Base
 
 class User(Base):
     __tablename__ = "users"
@@ -14,6 +14,8 @@ class User(Base):
     mobilenumber = Column(String(15), unique=True, index=True, nullable=False)
     password = Column(String(200), nullable=False)
     created_at = Column(DateTime, default=datetime.utcnow)
+    reset_token = Column(String(200), nullable=True)
+    reset_token_expires = Column(DateTime, nullable=True)
 
     # Relationship with expenses
     expenses = relationship("Expense", back_populates="user")

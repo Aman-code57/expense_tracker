@@ -2,7 +2,6 @@
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker, declarative_base
 
-# Using SQLite for development (no external database required)
 DATABASE_URL = "sqlite:///./expense_tracker.db"
 
 engine = create_engine(DATABASE_URL, echo=True)

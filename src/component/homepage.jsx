@@ -1,26 +1,42 @@
 import React from "react";
+import Navbar from "./common/Navbar";
+import Table from "./common/Table";
+import Button from "./common/Button";
 import "./HomePage.css";
 
 function HomePage() {
+  const links = [
+    { href: '/dashboard', label: 'Dashboard' },
+    { href: '/expenses', label: 'Expenses' },
+    { href: '/reports', label: 'Reports' },
+    { href: '/logout', label: 'Logout' },
+  ];
+
+  const headers = ['Date', 'Category', 'Amount', 'Description', 'Actions'];
+
+  const data = [
+    ['2025-09-20', 'Food', '$20', 'Lunch at Cafe'],
+    ['2025-09-21', 'Transport', '$15', 'Cab Ride'],
+  ];
+
+  const handleEdit = (index) => {
+    console.log('Edit expense at index:', index);
+  };
+
+  const handleDelete = (index) => {
+    console.log('Delete expense at index:', index);
+  };
+
   return (
     <div className="homepage">
-      {/* Navbar */}
-      <header className="navbar">
-        <h1>Expense Tracker</h1>
-        <nav>
-          <a href="/dashboard">Dashboard</a>
-          <a href="/expenses">Expenses</a>
-          <a href="/reports">Reports</a>
-          <a href="/logout">Logout</a>
-        </nav>
-      </header>
+      <Navbar title="Expense Tracker" links={links} />
 
-      {/* Dashboard Summary */}
+   
       <section className="summary">
         <h2>Total Spent: $5000</h2>
       </section>
 
-      {/* Charts Section */}
+  
       <section className="charts">
         <div className="chart-box">
           <h3>Category Breakdown</h3>
@@ -35,39 +51,7 @@ function HomePage() {
       {/* Expense List */}
       <section className="expense-list">
         <h3>Recent Expenses</h3>
-        <table>
-          <thead>
-            <tr>
-              <th>Date</th>
-              <th>Category</th>
-              <th>Amount</th>
-              <th>Description</th>
-              <th>Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr>
-              <td>2025-09-20</td>
-              <td>Food</td>
-              <td>$20</td>
-              <td>Lunch at Cafe</td>
-              <td>
-                <button className="edit-btn">Edit</button>
-                <button className="delete-btn">Delete</button>
-              </td>
-            </tr>
-            <tr>
-              <td>2025-09-21</td>
-              <td>Transport</td>
-              <td>$15</td>
-              <td>Cab Ride</td>
-              <td>
-                <button className="edit-btn">Edit</button>
-                <button className="delete-btn">Delete</button>
-              </td>
-            </tr>
-          </tbody>
-        </table>
+        <Table headers={headers} data={data} onEdit={handleEdit} onDelete={handleDelete} />
       </section>
     </div>
   );
