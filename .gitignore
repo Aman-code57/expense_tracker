@@ -25,3 +25,4 @@ dist-ssr
 .p.txt
 .t.txt
 .env
+.test_email.py

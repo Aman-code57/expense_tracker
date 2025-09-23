@@ -50,8 +50,8 @@ ACCESS_TOKEN_EXPIRE_MINUTES = 30
 # SMTP Configuration (configure these in your environment variables)
 SMTP_SERVER = config("SMTP_SERVER", default="smtp.gmail.com")
 SMTP_PORT = config("SMTP_PORT", default=587, cast=int)
-SMTP_USERNAME = config("SMTP_USERNAME", default="amanraturi5757@gmail.com")
-SMTP_PASSWORD = config("SMTP_PASSWORD", default="epif azzt hgjg zvcy")
+EMAIL_USER = config("EMAIL_USER", default="amanraturi5757@gmail.com")
+EMAIL_PASSWORD = config("EMAIL_PASSWORD", default="epif azzt hgjg zvcy")
 
 security = HTTPBearer()
 
@@ -134,16 +134,16 @@ def send_reset_email(to_email: str, reset_token: str):
     """
     
     msg = MIMEMultipart()
-    msg['From'] = SMTP_USERNAME
+    msg['From'] = EMAIL_USER
     msg['To'] = to_email
     msg['Subject'] = subject
     msg.attach(MIMEText(body, 'plain'))
-    
+
     try:
         server = smtplib.SMTP(SMTP_SERVER, SMTP_PORT)
         server.starttls()
-        server.login(SMTP_USERNAME, SMTP_PASSWORD)
-        server.sendmail(SMTP_USERNAME, to_email, msg.as_string())
+        server.login(EMAIL_USER, EMAIL_PASSWORD)
+        server.sendmail(EMAIL_USER, to_email, msg.as_string())
         server.quit()
         print(f"Password reset email sent to {to_email}")
     except Exception as e:
@@ -357,7 +357,7 @@ def send_otp_email(to_email: str, otp: str):
     """
 
     msg = MIMEMultipart()
-    msg['From'] = SMTP_USERNAME
+    msg['From'] = EMAIL_USER
     msg['To'] = to_email
     msg['Subject'] = subject
     msg.attach(MIMEText(body, 'plain'))
@@ -365,8 +365,8 @@ def send_otp_email(to_email: str, otp: str):
     try:
         server = smtplib.SMTP(SMTP_SERVER, SMTP_PORT)
         server.starttls()
-        server.login(SMTP_USERNAME, SMTP_PASSWORD)
-        server.sendmail(SMTP_USERNAME, to_email, msg.as_string())
+        server.login(EMAIL_USER, EMAIL_PASSWORD)
+        server.sendmail(EMAIL_USER, to_email, msg.as_string())
         server.quit()
         print(f"OTP email sent to {to_email}")
     except Exception as e:
@@ -487,6 +487,8 @@ async def reset_password_with_otp(request: dict, db: Session = Depends(get_db)):
     except Exception as e:
         db.rollback()
         return JSONResponse(status_code=500, content={"status": "error", "message": f"Error: {str(e)}"})
+
+
 
 @app.get("/api/health")
 async def health_check():
