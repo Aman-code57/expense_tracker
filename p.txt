@@ -1,0 +1,137 @@
+import React, { useState, useRef } from "react";
+import "./App.css"; // reuse the same CSS
+
+function SignIn() {
+  const [formData, setFormData] = useState({
+    email: "",
+    password: "",
+  });
+
+  const [errors, setErrors] = useState({});
+  const [termsAccepted, setTermsAccepted] = useState(false);
+  const [termsError, setTermsError] = useState("");
+
+  const refs = {
+    email: useRef(null),
+    password: useRef(null),
+  };
+
+  const validateField = (name, value) => {
+    let error = "";
+
+    if (name === "email") {
+      if (!value) error = "Email is required";
+      else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value))
+        error = "Enter a valid email";
+    }
+
+    if (name === "password") {
+      if (!value) error = "Password is required";
+      else if (value.length < 6 || value.length > 12)
+        error = "Password must be 6–12 characters";
+      else if (!/^(?=.*[a-z])(?=.*[A-Z])(?=.*[!@#$%&*])(?=.*[0-9])/.test(value))
+        error = "At least 1 Uppercase, 1 Lowercase, 1 Number & 1 Special character";
+    }
+
+    setErrors((prev) => ({ ...prev, [name]: error }));
+    return error;
+  };
+
+  const validateAll = () => {
+    let firstErrorField = null;
+    Object.keys(formData).forEach((field) => {
+      const error = validateField(field, formData[field]);
+      if (error && !firstErrorField) firstErrorField = field;
+    });
+
+    if (!termsAccepted) {
+      setTermsError("You must accept terms & conditions");
+    } else {
+      setTermsError("");
+    }
+
+    return firstErrorField;
+  };
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    const firstErrorField = validateAll();
+
+    if (firstErrorField) {
+      refs[firstErrorField].current.focus();
+    } else if (!termsAccepted) {
+      // do nothing, error shown
+    } else {
+      alert("Login Successful!");
+      setFormData({ email: "", password: "" });
+      setErrors({});
+      setTermsAccepted(false);
+    }
+  };
+
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    setFormData((prev) => ({ ...prev, [name]: value }));
+    validateField(name, value);
+  };
+
+  return (
+    <div className="app">
+      <h1>Sign In</h1>
+
+      <form className="input-container" onSubmit={handleSubmit} noValidate>
+        <div className="input-row">
+          <label htmlFor="email">
+            Email <span className="required">*</span>
+          </label>
+          <input
+            ref={refs.email}
+            type="text"
+            id="email"
+            name="email"
+            placeholder="Enter your email"
+            value={formData.email}
+            onChange={handleChange}
+            onBlur={(e) => validateField("email", e.target.value)}
+          />
+          <span className="error">{errors.email || ""}</span>
+        </div>
+
+        <div className="input-row">
+          <label htmlFor="password">
+            Password <span className="required">*</span>
+          </label>
+          <input
+            ref={refs.password}
+            type="password"
+            id="password"
+            name="password"
+            placeholder="Enter your password"
+            value={formData.password}
+            onChange={handleChange}
+            onBlur={(e) => validateField("password", e.target.value)}
+          />
+          <span className="error">{errors.password || ""}</span>
+        </div>
+
+        <div className="input-row">
+          <label>
+            <input
+              type="checkbox"
+              checked={termsAccepted}
+              onChange={(e) => setTermsAccepted(e.target.checked)}
+            />{" "}
+            I accept the terms & conditions
+          </label>
+          <span className="error">{termsError}</span>
+        </div>
+
+        <button type="submit" className="btn-submit">
+          Submit
+        </button>
+      </form>
+    </div>
+  );
+}
+
+export default SignIn;
