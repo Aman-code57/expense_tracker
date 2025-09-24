@@ -10,14 +10,12 @@ import smtplib
 import random
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
-from decouple import config
+from decouple import config, UndefinedValueError
 from fastapi.responses import JSONResponse
 from database import get_db, engine
 from models import Base, User
 
-
 Base.metadata.create_all(bind=engine)
-
 
 app = FastAPI(title="Expense Tracker API", version="1.0.0")
 
@@ -27,11 +25,11 @@ app.add_middleware(
     allow_origins=[
         "http://localhost:5173",
         "http://127.0.0.1:5173",
-        "http://[::1]:5173",  
+        "http://[::1]:5173",
         "http://localhost:5174",
         "http://127.0.0.1:5174",
-        "http://[::1]:5174",  
-        "http://localhost:3000", 
+        "http://[::1]:5174",
+        "http://localhost:3000",
         "http://127.0.0.1:3000"
     ],
     allow_credentials=True,
@@ -39,116 +37,84 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
-
 
 SECRET_KEY = "your-secret-key"
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 30
 
-SMTP_SERVER = config("SMTP_SERVER", default="smtp.gmail.com")
-SMTP_PORT = config("SMTP_PORT", default=587, cast=int)
-EMAIL_USER = config("EMAIL_USER", default="amanraturi5757@gmail.com")
-EMAIL_PASSWORD = config("EMAIL_PASSWORD", default="epif azzt hgjg zvcy")
+# Safe .env loading
+def safe_config(key, default=None, cast=str):
+    try:
+        return config(key, default=default, cast=cast)
+    except (UnicodeDecodeError, UndefinedValueError, ValueError):
+        print(f"[CONFIG WARNING] Using default for {key}")
+        return default
+
+SMTP_SERVER = safe_config("SMTP_SERVER", default="smtp.gmail.com")
+SMTP_PORT = safe_config("SMTP_PORT", default=587, cast=int)
+EMAIL_USER = safe_config("EMAIL_USER", default="amanraturi5757@gmail.com")
+EMAIL_PASSWORD = safe_config("EMAIL_PASSWORD", default="epif azzt hgjg zvcy")
 
 security = HTTPBearer()
 
 def verify_password(plain_password, hashed_password):
-    """Verify a password against its hash"""
     return pwd_context.verify(plain_password, hashed_password)
 
 def get_password_hash(password):
-    """Hash a password"""
     return pwd_context.hash(password)
 
 def create_access_token(data: dict, expires_delta: timedelta = None):
-    """Create JWT access token"""
     to_encode = data.copy()
-    if expires_delta:
-        expire = datetime.utcnow() + expires_delta
-    else:
-        expire = datetime.utcnow() + timedelta(minutes=15)
+    expire = datetime.utcnow() + (expires_delta if expires_delta else timedelta(minutes=15))
     to_encode.update({"exp": expire})
-    encoded_jwt = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
-    return encoded_jwt
+    return jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
 
 def create_reset_token(data: dict, expires_delta: timedelta = None):
-    """Create JWT reset token"""
     to_encode = data.copy()
-    if expires_delta:
-        expire = datetime.utcnow() + expires_delta
-    else:
-        expire = datetime.utcnow() + timedelta(hours=1)
+    expire = datetime.utcnow() + (expires_delta if expires_delta else timedelta(hours=1))
     to_encode.update({"exp": expire})
-    encoded_jwt = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
-    return encoded_jwt
+    return jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
 
 def verify_token(credentials: HTTPAuthorizationCredentials = Depends(security)):
-    """Verify JWT token"""
     try:
         payload = jwt.decode(credentials.credentials, SECRET_KEY, algorithms=[ALGORITHM])
         email: str = payload.get("sub")
         if email is None:
-            raise HTTPException(
-                status_code=status.HTTP_401_UNAUTHORIZED,
-                detail="Invalid authentication credentials",
-                headers={"WWW-Authenticate": "Bearer"},
-            )
+            raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid authentication credentials")
         return email
-    except jwt.PyJWTError:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Invalid authentication credentials",
-            headers={"WWW-Authenticate": "Bearer"},
-        )
+    except JWTError:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid authentication credentials")
 
 def validate_email(email: str) -> bool:
-    """Validate email format"""
-    pattern = r'^[^\s@]+@[^\s@]+\.[^\s@]+$'
-    return re.match(pattern, email) is not None
+    return re.match(r'^[^\s@]+@[^\s@]+\.[^\s@]+$', email) is not None
 
 def validate_mobile(mobile: str) -> bool:
-    """Validate mobile number (10 digits)"""
-    pattern = r'^\d{10}$'
-    return re.match(pattern, mobile) is not None
+    return re.match(r'^\d{10}$', mobile) is not None
 
-def send_reset_email(to_email: str, reset_token: str):
-    """Send password reset email"""
-    reset_link = f"http://localhost:5173/reset-password?token={reset_token}"
-    subject = "Password Reset Request"
-    body = f"""
-    Hi,
-
-    You have requested to reset your password. Click the link below to reset it:
-
-    {reset_link}
-
-    This link will expire in 1 hour.
-
-    """
-    
+def send_email(to_email: str, subject: str, body: str):
     msg = MIMEMultipart()
     msg['From'] = EMAIL_USER
     msg['To'] = to_email
     msg['Subject'] = subject
     msg.attach(MIMEText(body, 'plain'))
-
     try:
         server = smtplib.SMTP(SMTP_SERVER, SMTP_PORT)
         server.starttls()
         server.login(EMAIL_USER, EMAIL_PASSWORD)
         server.sendmail(EMAIL_USER, to_email, msg.as_string())
         server.quit()
-        print(f"Password reset email sent to {to_email}")
+        print(f"Email sent to {to_email}")
     except Exception as e:
         print(f"Failed to send email: {str(e)}")
         raise e
 
+def generate_otp() -> str:
+    return str(random.randint(100000, 999999))
+
 
 @app.post("/api/signup")
 async def signup(user_data: dict, db: Session = Depends(get_db)):
-    """User registration endpoint"""
     try:
         fullname = user_data.get("fullname", "").strip()
         email = user_data.get("email", "").strip().lower()
@@ -188,12 +154,8 @@ async def signup(user_data: dict, db: Session = Depends(get_db)):
                 errors["mobilenumber"] = "Mobile number already registered"
 
         if errors:
-            return JSONResponse(
-                status_code=400,
-                content={"status": "error", "message": "Validation failed", "errors": errors}
-            )
+            return JSONResponse(status_code=400, content={"status": "error", "message": "Validation failed", "errors": errors})
 
-        # Create new user
         hashed_password = get_password_hash(password)
         new_user = User(
             fullname=fullname,
@@ -207,69 +169,30 @@ async def signup(user_data: dict, db: Session = Depends(get_db)):
         db.commit()
         db.refresh(new_user)
 
-        return JSONResponse(
-            status_code=201,
-            content={"status": "success", "message": "User registered successfully", "user_id": new_user.id}
-        )
-
+        return JSONResponse(status_code=201, content={"status": "success", "message": "User registered successfully", "user_id": new_user.id})
     except Exception as e:
         db.rollback()
-        return JSONResponse(
-            status_code=500,
-            content={"status": "error", "message": f"Registration failed: {str(e)}"}
-        )
-
+        return JSONResponse(status_code=500, content={"status": "error", "message": f"Registration failed: {str(e)}"})
 
 @app.post("/api/signin")
 async def signin(credentials: dict, db: Session = Depends(get_db)):
-    """User login endpoint"""
     try:
         email = credentials.get("email", "").strip().lower()
         password = credentials.get("password", "")
-
         if not email or not password:
-            return JSONResponse(
-                status_code=400,
-                content={"status": "error", "message": "Email and password are required"}
-            )
+            return JSONResponse(status_code=400, content={"status": "error", "message": "Email and password are required"})
 
         user = db.query(User).filter(User.email == email).first()
-
         if not user or not verify_password(password, user.password):
-            return JSONResponse(
-                status_code=401,
-                content={"status": "error", "message": "Invalid email or password"}
-            )
+            return JSONResponse(status_code=401, content={"status": "error", "message": "Invalid email or password"})
 
-        access_token = create_access_token(
-            data={"sub": user.email},
-            expires_delta=timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
-        )
-
-        return JSONResponse(
-            status_code=200,
-            content={
-                "status": "success",
-                "message": "Login successful",
-                "access_token": access_token,
-                "user": {
-                    "id": user.id,
-                    "fullname": user.fullname,
-                    "email": user.email,
-                    "gender": user.gender
-                }
-            }
-        )
-
+        access_token = create_access_token(data={"sub": user.email}, expires_delta=timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES))
+        return JSONResponse(status_code=200, content={"status": "success", "message": "Login successful", "access_token": access_token, "user": {"id": user.id, "fullname": user.fullname, "email": user.email, "gender": user.gender}})
     except Exception as e:
-        return JSONResponse(
-            status_code=500,
-            content={"status": "error", "message": f"Login failed: {str(e)}"}
-        )
+        return JSONResponse(status_code=500, content={"status": "error", "message": f"Login failed: {str(e)}"})
 
 @app.post("/api/forgot-password")
 async def forgot_password(request: dict, db: Session = Depends(get_db)):
-    """Forgot password endpoint"""
     try:
         email = request.get("email", "").strip().lower()
         if not email or not validate_email(email):
@@ -278,93 +201,21 @@ async def forgot_password(request: dict, db: Session = Depends(get_db)):
         user = db.query(User).filter(User.email == email).first()
         if not user:
             return JSONResponse(status_code=404, content={"status": "error", "message": "User not found"})
-        
+
         reset_token = create_reset_token(data={"sub": user.email})
         user.reset_token = reset_token
         user.reset_token_expires = datetime.utcnow() + timedelta(hours=1)
         db.commit()
-        
-        try:                                                          # Send reset email
-            send_reset_email(user.email, reset_token)
-        except Exception as e:
-            print(f"Email sending failed: {str(e)}")                  # If email fails, still return success but log the error
-        
+
+        send_email(user.email, "Password Reset Request", f"Click to reset password: http://localhost:5173/reset-password?token={reset_token}")
+
         return JSONResponse(status_code=200, content={"status": "success", "message": "Password reset link sent!"})
     except Exception as e:
         db.rollback()
         return JSONResponse(status_code=500, content={"status": "error", "message": f"Error: {str(e)}"})
 
-@app.post("/api/reset-password")
-async def reset_password(request: dict, db: Session = Depends(get_db)):
-    """Reset password endpoint"""
-    try:
-        reset_token = request.get("reset_token")
-        new_password = request.get("new_password")
-        
-        if not reset_token or not new_password:
-            return JSONResponse(status_code=400, content={"status": "error", "message": "Reset token and new password are required"})
-        
-        try:
-            payload = jwt.decode(reset_token, SECRET_KEY, algorithms=[ALGORITHM])
-            email: str = payload.get("sub")
-            exp = payload.get("exp")
-            if email is None or exp is None or datetime.utcnow() > datetime.fromtimestamp(exp):
-                return JSONResponse(status_code=401, content={"status": "error", "message": "Invalid or expired token"})
-        except jwt.PyJWTError:
-            return JSONResponse(status_code=401, content={"status": "error", "message": "Invalid token"})
-        
-        user = db.query(User).filter(User.email == email).first()
-        if not user:
-            return JSONResponse(status_code=404, content={"status": "error", "message": "User not found"})
-        
-        user.password = get_password_hash(new_password)
-        user.reset_token = None
-        user.reset_token_expires = None
-        db.commit()
-        
-        return JSONResponse(status_code=200, content={"status": "success", "message": "Password reset successfully"})
-    except Exception as e:
-        db.rollback()
-        return JSONResponse(status_code=500, content={"status": "error", "message": f"Error: {str(e)}"})
-
-def generate_otp() -> str:
-    """Generate a 6-digit OTP"""
-    return str(random.randint(100000, 999999))
-
-def send_otp_email(to_email: str, otp: str):
-    """Send OTP email"""
-    subject = "Password Reset OTP"
-    body = f"""
-    Hi,
-
-    You have requested to reset your password. Your OTP is:
-
-    {otp}
-
-    This OTP will expire in 10 minutes.
-    
-    """
-
-    msg = MIMEMultipart()
-    msg['From'] = EMAIL_USER
-    msg['To'] = to_email
-    msg['Subject'] = subject
-    msg.attach(MIMEText(body, 'plain'))
-
-    try:
-        server = smtplib.SMTP(SMTP_SERVER, SMTP_PORT)
-        server.starttls()
-        server.login(EMAIL_USER, EMAIL_PASSWORD)
-        server.sendmail(EMAIL_USER, to_email, msg.as_string())
-        server.quit()
-        print(f"OTP email sent to {to_email}")
-    except Exception as e:
-        print(f"Failed to send OTP email: {str(e)}")
-        raise e
-
 @app.post("/api/send-otp")
 async def send_otp(request: dict, db: Session = Depends(get_db)):
-    """Send OTP for password reset"""
     try:
         email = request.get("email", "").strip().lower()
         if not email or not validate_email(email):
@@ -375,19 +226,10 @@ async def send_otp(request: dict, db: Session = Depends(get_db)):
             return JSONResponse(status_code=404, content={"status": "error", "message": "User not found"})
 
         otp = generate_otp()
-
-        # Store OTP in database (you might want to hash this in production)
-        user.reset_token = otp  # Using reset_token field to store OTP temporarily
+        user.reset_token = otp
         user.reset_token_expires = datetime.utcnow() + timedelta(minutes=10)
         db.commit()
-
-        # Send OTP email
-        try:
-            send_otp_email(user.email, otp)
-        except Exception as e:
-            # If email fails, still return success but log the error
-            print(f"OTP email sending failed: {str(e)}")
-
+        send_email(user.email, "OTP for Password Reset", f"Your OTP is {otp}")
         return JSONResponse(status_code=200, content={"status": "success", "message": "OTP sent to your email"})
     except Exception as e:
         db.rollback()
@@ -395,72 +237,39 @@ async def send_otp(request: dict, db: Session = Depends(get_db)):
 
 @app.post("/api/verify-otp")
 async def verify_otp(request: dict, db: Session = Depends(get_db)):
-    """Verify OTP and return reset token"""
     try:
         email = request.get("email", "").strip().lower()
         otp = request.get("otp", "").strip()
-
         if not email or not otp:
             return JSONResponse(status_code=400, content={"status": "error", "message": "Email and OTP are required"})
-
-        if not validate_email(email):
-            return JSONResponse(status_code=400, content={"status": "error", "message": "Valid email is required"})
 
         user = db.query(User).filter(User.email == email).first()
         if not user:
             return JSONResponse(status_code=404, content={"status": "error", "message": "User not found"})
-
-        # Check if OTP exists and hasn't expired
         if not user.reset_token or user.reset_token != otp:
             return JSONResponse(status_code=401, content={"status": "error", "message": "Invalid OTP"})
-
         if user.reset_token_expires and datetime.utcnow() > user.reset_token_expires:
-            return JSONResponse(status_code=401, content={"status": "error", "message": "OTP has expired"})
+            return JSONResponse(status_code=401, content={"status": "error", "message": "OTP expired"})
 
-        # Generate reset token
         reset_token = create_reset_token(data={"sub": user.email}, expires_delta=timedelta(hours=1))
-
-        # Clear OTP and set reset token
         user.reset_token = reset_token
         user.reset_token_expires = datetime.utcnow() + timedelta(hours=1)
         db.commit()
-
-        return JSONResponse(
-            status_code=200,
-            content={
-                "status": "success",
-                "message": "OTP verified successfully",
-                "reset_token": reset_token
-            }
-        )
+        return JSONResponse(status_code=200, content={"status": "success", "message": "OTP verified", "reset_token": reset_token})
     except Exception as e:
         db.rollback()
         return JSONResponse(status_code=500, content={"status": "error", "message": f"Error: {str(e)}"})
 
 @app.post("/api/reset-password-with-otp")
 async def reset_password_with_otp(request: dict, db: Session = Depends(get_db)):
-    """Reset password using OTP token"""
     try:
         reset_token = request.get("reset_token")
         new_password = request.get("new_password")
-
         if not reset_token or not new_password:
-            return JSONResponse(status_code=400, content={"status": "error", "message": "Reset token and new password are required"})
+            return JSONResponse(status_code=400, content={"status": "error", "message": "Reset token and new password required"})
 
-        if len(new_password) < 6:
-            return JSONResponse(status_code=400, content={"status": "error", "message": "Password must be at least 6 characters"})
-        elif not re.search(r"[A-Za-z]", new_password) or not re.search(r"\d", new_password):
-            return JSONResponse(status_code=400, content={"status": "error", "message": "Password must contain at least 1 letter and 1 number"})
-
-        try:
-            payload = jwt.decode(reset_token, SECRET_KEY, algorithms=[ALGORITHM])
-            email: str = payload.get("sub")
-            exp = payload.get("exp")
-            if email is None or exp is None or datetime.utcnow() > datetime.fromtimestamp(exp):
-                return JSONResponse(status_code=401, content={"status": "error", "message": "Invalid or expired token"})
-        except jwt.PyJWTError:
-            return JSONResponse(status_code=401, content={"status": "error", "message": "Invalid token"})
-
+        payload = jwt.decode(reset_token, SECRET_KEY, algorithms=[ALGORITHM])
+        email: str = payload.get("sub")
         user = db.query(User).filter(User.email == email).first()
         if not user:
             return JSONResponse(status_code=404, content={"status": "error", "message": "User not found"})
@@ -469,17 +278,13 @@ async def reset_password_with_otp(request: dict, db: Session = Depends(get_db)):
         user.reset_token = None
         user.reset_token_expires = None
         db.commit()
-
         return JSONResponse(status_code=200, content={"status": "success", "message": "Password reset successfully"})
     except Exception as e:
         db.rollback()
         return JSONResponse(status_code=500, content={"status": "error", "message": f"Error: {str(e)}"})
 
-
-
 @app.get("/api/dashboard")
 async def get_dashboard_data(email: str = Depends(verify_token), db: Session = Depends(get_db)):
-    """Get dashboard data for the authenticated user"""
     try:
         user = db.query(User).filter(User.email == email).first()
         if not user:
@@ -491,31 +296,18 @@ async def get_dashboard_data(email: str = Depends(verify_token), db: Session = D
                 {"date": "2025-09-20", "category": "Food", "amount": 20.0, "description": "Lunch at Cafe"},
                 {"date": "2025-09-21", "category": "Transport", "amount": 15.0, "description": "Cab Ride"}
             ],
-            "category_breakdown": {
-                "Food": 2000.0,
-                "Transport": 1500.0,
-                "Other": 1500.0
-            }
+            "category_breakdown": {"Food": 2000.0, "Transport": 1500.0, "Other": 1500.0}
         }
-
-        return JSONResponse(
-            status_code=200,
-            content={"status": "success", "data": dashboard_data}
-        )
+        return JSONResponse(status_code=200, content={"status": "success", "data": dashboard_data})
     except Exception as e:
-        return JSONResponse(
-            status_code=500,
-            content={"status": "error", "message": f"Error fetching dashboard data: {str(e)}"}
-        )
+        return JSONResponse(status_code=500, content={"status": "error", "message": f"Error fetching dashboard data: {str(e)}"})
 
 @app.get("/api/health")
 async def health_check():
-    """Health check endpoint"""
     return {"status": "healthy", "message": "Expense Tracker API is running"}
 
 @app.get("/")
 async def root():
-    """Root endpoint"""
     return {"message": "Welcome to Expense Tracker API"}
 
 if __name__ == "__main__":
