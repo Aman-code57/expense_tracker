@@ -4,6 +4,7 @@ import SignUp from './component/SignUp';
 import ForgotPassword from './component/ForgotPassword';
 import OTPForgotPassword from './component/OTPForgotPassword';
 import ResetPassword from './component/ResetPassword';
+import Dashboard from './component/Dashboard';
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 
@@ -26,6 +27,7 @@ function App() {
         <Route path="/forgotpassword" element={<ForgotPassword />} />
         <Route path="/otp-forgot-password" element={<OTPForgotPassword />} />
         <Route path="/reset-password" element={<ResetPassword />} />
+        <Route path="/dashboard" element={<Dashboard />} />
       </Routes>
     </Router>
   );

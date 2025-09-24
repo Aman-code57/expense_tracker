@@ -59,7 +59,7 @@
 }
 
 .input-box input::placeholder {
-  color: #999;
+  color: black;
 }
 
 .error {

@@ -1,0 +1,122 @@
+Expense Tracker App - Data Validations Summary
+
+This file contains a comprehensive list of all data validations implemented in the Expense Tracker app, categorized by client-side (frontend) and server-side (backend).
+
+========================================
+CLIENT-SIDE VALIDATIONS (Frontend - React Components)
+========================================
+
+1. SignUp Component (src/component/SignUp.jsx):
+   - Full Name:
+     - Required
+     - Must start with a capital letter
+     - Can only contain letters (no numbers or special characters)
+     - Length: 3-15 characters
+   - Email:
+     - Required
+     - Must be a valid email format (e.g., user@example.com)
+   - Gender:
+     - Required
+     - Must be selected from options: Male, Female, Trans
+   - Mobile Number:
+     - Required
+     - Must be exactly 10 digits
+   - Password:
+     - Required
+     - Minimum length: 6 characters
+     - Must contain at least 1 letter and 1 number
+   - Confirm Password:
+     - Required
+     - Must match the password field
+   - Terms & Conditions:
+     - Must be accepted (checkbox)
+
+2. SignIn Component (src/component/SignIn.jsx):
+   - Email:
+     - Required
+     - Must be a valid email format (e.g., user@example.com)
+   - Password:
+     - Required
+     - Minimum length: 6 characters
+     - Must contain at least 1 letter and 1 number
+
+3. ForgotPassword Component (src/component/ForgotPassword.jsx):
+   - Email:
+     - Required
+     - Must be a valid email format (e.g., user@example.com)
+
+4. ResetPassword Component (src/component/ResetPassword.jsx):
+   - New Password:
+     - Required
+     - Minimum length: 6 characters
+   - Confirm Password:
+     - Required
+     - Must match the new password field
+   - Token:
+     - Must be present in URL parameters (for password reset link)
+
+========================================
+SERVER-SIDE VALIDATIONS (Backend - FastAPI and Database Models)
+========================================
+
+1. Database Models (backend/models.py):
+   - User Model:
+     - fullname: String (max 100 characters), not nullable
+     - email: String (max 100 characters), unique, indexed, not nullable
+     - gender: String (max 20 characters), not nullable
+     - mobilenumber: String (max 15 characters), unique, indexed, not nullable
+     - password: String (max 200 characters), not nullable
+     - reset_token: String (max 200 characters), nullable
+     - reset_token_expires: DateTime, nullable
+   - Expense Model:
+     - user_id: Integer (foreign key to users.id), not nullable
+     - amount: Float, not nullable
+     - category: String (max 50 characters), not nullable
+     - description: Text, nullable
+
+2. API Endpoints (backend/main.py):
+
+   - Signup (/api/signup):
+     - fullname: 3-100 characters, can only contain letters and spaces
+     - email: Must be a valid email format
+     - gender: Required
+     - mobilenumber: Must be exactly 10 digits
+     - password: Minimum 6 characters, must contain at least 1 letter and 1 number
+     - Additional checks: Email and mobile number must not already be registered
+
+   - Signin (/api/signin):
+     - email: Required, must be a valid email format
+     - password: Required
+     - Additional checks: User must exist in database, password must match stored hash
+
+   - Forgot Password (/api/forgot-password):
+     - email: Required, must be a valid email format
+     - Additional checks: User with the email must exist in database
+
+   - Reset Password (/api/reset-password):
+     - reset_token: Required, must be valid JWT token, not expired
+     - new_password: Required, minimum 6 characters, must contain at least 1 letter and 1 number
+     - Additional checks: Token must correspond to an existing user
+
+   - Send OTP (/api/send-otp):
+     - email: Required, must be a valid email format
+     - Additional checks: User with the email must exist in database
+
+   - Verify OTP (/api/verify-otp):
+     - email: Required, must be a valid email format
+     - otp: Required, must match the stored OTP for the user, must not be expired
+     - Additional checks: User must exist, OTP must be valid and within time limit
+
+   - Reset Password with OTP (/api/reset-password-with-otp):
+     - reset_token: Required, must be valid JWT token, not expired
+     - new_password: Required, minimum 6 characters, must contain at least 1 letter and 1 number
+     - Additional checks: Token must correspond to an existing user
+
+========================================
+NOTES
+========================================
+- Client-side validations are implemented using React state and validation functions to provide immediate feedback to users.
+- Server-side validations are enforced through FastAPI endpoint logic and SQLAlchemy model constraints to ensure data integrity.
+- Passwords are hashed using bcrypt before storage.
+- JWT tokens are used for authentication and password reset, with expiration times.
+- Email sending for password reset uses SMTP configuration.

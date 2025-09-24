@@ -6,7 +6,7 @@ import "./SignUp.css";
 
 const SignUp = () => {
   const [formData, setFormData] = useState({
-    fullName: "",
+    fullname: "",
     email: "",
     gender: "",
     mobilenumber: "",
@@ -17,7 +17,7 @@ const SignUp = () => {
   const [termsAccepted, setTermsAccepted] = useState(false);
 
   const refs = {
-    fullName: useRef(null),
+    fullname: useRef(null),
     email: useRef(null),
     gender: useRef(null),
     mobilenumber: useRef(null),
@@ -28,7 +28,7 @@ const SignUp = () => {
   // Field configuration
   const fields = [
     {
-      name: "fullName",
+      name: "fullname",
       label: "Full Name",
       type: "text",
       placeholder: "Enter full name",
@@ -138,7 +138,7 @@ const SignUp = () => {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          fullname: formData.fullName,
+          fullname: formData.fullname,
           email: formData.email,
           gender: formData.gender,
           mobilenumber: formData.mobilenumber,
@@ -151,7 +151,7 @@ const SignUp = () => {
       if (data.status === "success") {
         toast.success(data.message);
         setFormData({
-          fullName: "",
+          fullname: "",
           email: "",
           gender: "",
           mobilenumber: "",
@@ -160,7 +160,7 @@ const SignUp = () => {
         });
         setErrors({});
         setTermsAccepted(false);
-        refs.fullName.current.focus();
+        refs.fullname.current.focus();
       } else {
         toast.error(data.message || "Registration failed");
       }
@@ -172,7 +172,7 @@ const SignUp = () => {
 
  
   const fieldPairs = [
-    ["fullName", "email"],
+    ["fullname", "email"],
     ["gender", "mobilenumber"],
     ["password", "confirmPassword"],
   ];

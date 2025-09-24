@@ -2,7 +2,7 @@
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker, declarative_base
 
-DATABASE_URL = "sqlite:///./expense_tracker.db"
+DATABASE_URL = "mysql+pymysql://root:Rockstar%405057@127.0.0.1:3306/expense_tracker"
 
 engine = create_engine(DATABASE_URL, echo=True)
 

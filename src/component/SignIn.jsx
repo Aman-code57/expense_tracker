@@ -1,10 +1,11 @@
 import React, { useState, useRef } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import "./SignIn.css";
 
 const SignIn = () => {
+  const navigate = useNavigate(); // for redirecting
   const [formData, setFormData] = useState({ email: "", password: "" });
   const [errors, setErrors] = useState({});
   const [loading, setLoading] = useState(false);
@@ -58,6 +59,7 @@ const SignIn = () => {
     });
     return firstErrorField;
   };
+
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
@@ -88,6 +90,9 @@ const SignIn = () => {
         setFormData({ email: "", password: "" });
         setErrors({});
         localStorage.setItem("access_token", data.access_token);
+
+        // Redirect to dashboard
+        navigate("/dashboard");
       } else {
         toast.error(data.message || "Login failed");
       }
@@ -108,7 +113,13 @@ const SignIn = () => {
             <label htmlFor={field.name}>
               {field.label} <span className="required">*</span>
             </label>
-            <input ref={refs[field.name]} type={field.type} id={field.name} name={field.name} placeholder={field.placeholder || ""} value={formData[field.name]}
+            <input
+              ref={refs[field.name]}
+              type={field.type}
+              id={field.name}
+              name={field.name}
+              placeholder={field.placeholder || ""}
+              value={formData[field.name]}
               onChange={handleChange}
               onBlur={(e) => validateField(field.name, e.target.value)}
             />

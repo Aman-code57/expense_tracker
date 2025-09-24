@@ -47,7 +47,6 @@ SECRET_KEY = "your-secret-key"
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 30
 
-# SMTP Configuration (configure these in your environment variables)
 SMTP_SERVER = config("SMTP_SERVER", default="smtp.gmail.com")
 SMTP_PORT = config("SMTP_PORT", default=587, cast=int)
 EMAIL_USER = config("EMAIL_USER", default="amanraturi5757@gmail.com")
@@ -127,10 +126,6 @@ def send_reset_email(to_email: str, reset_token: str):
 
     This link will expire in 1 hour.
 
-    If you didn't request this, please ignore this email.
-
-    Best regards,
-    Expense Tracker Team
     """
     
     msg = MIMEMultipart()
@@ -289,12 +284,10 @@ async def forgot_password(request: dict, db: Session = Depends(get_db)):
         user.reset_token_expires = datetime.utcnow() + timedelta(hours=1)
         db.commit()
         
-        # Send reset email
-        try:
+        try:                                                          # Send reset email
             send_reset_email(user.email, reset_token)
         except Exception as e:
-            # If email fails, still return success but log the error
-            print(f"Email sending failed: {str(e)}")
+            print(f"Email sending failed: {str(e)}")                  # If email fails, still return success but log the error
         
         return JSONResponse(status_code=200, content={"status": "success", "message": "Password reset link sent!"})
     except Exception as e:
@@ -349,11 +342,7 @@ def send_otp_email(to_email: str, otp: str):
     {otp}
 
     This OTP will expire in 10 minutes.
-
-    If you didn't request this, please ignore this email.
-
-    Best regards,
-    Expense Tracker Team
+    
     """
 
     msg = MIMEMultipart()
@@ -385,7 +374,6 @@ async def send_otp(request: dict, db: Session = Depends(get_db)):
         if not user:
             return JSONResponse(status_code=404, content={"status": "error", "message": "User not found"})
 
-        # Generate OTP
         otp = generate_otp()
 
         # Store OTP in database (you might want to hash this in production)
@@ -459,7 +447,6 @@ async def reset_password_with_otp(request: dict, db: Session = Depends(get_db)):
         if not reset_token or not new_password:
             return JSONResponse(status_code=400, content={"status": "error", "message": "Reset token and new password are required"})
 
-        # Validate password strength
         if len(new_password) < 6:
             return JSONResponse(status_code=400, content={"status": "error", "message": "Password must be at least 6 characters"})
         elif not re.search(r"[A-Za-z]", new_password) or not re.search(r"\d", new_password):
@@ -489,6 +476,37 @@ async def reset_password_with_otp(request: dict, db: Session = Depends(get_db)):
         return JSONResponse(status_code=500, content={"status": "error", "message": f"Error: {str(e)}"})
 
 
+
+@app.get("/api/dashboard")
+async def get_dashboard_data(email: str = Depends(verify_token), db: Session = Depends(get_db)):
+    """Get dashboard data for the authenticated user"""
+    try:
+        user = db.query(User).filter(User.email == email).first()
+        if not user:
+            raise HTTPException(status_code=404, detail="User not found")
+
+        dashboard_data = {
+            "total_spent": 0,
+            "recent_expenses": [
+                {"date": "2025-09-20", "category": "Food", "amount": 20.0, "description": "Lunch at Cafe"},
+                {"date": "2025-09-21", "category": "Transport", "amount": 15.0, "description": "Cab Ride"}
+            ],
+            "category_breakdown": {
+                "Food": 2000.0,
+                "Transport": 1500.0,
+                "Other": 1500.0
+            }
+        }
+
+        return JSONResponse(
+            status_code=200,
+            content={"status": "success", "data": dashboard_data}
+        )
+    except Exception as e:
+        return JSONResponse(
+            status_code=500,
+            content={"status": "error", "message": f"Error fetching dashboard data: {str(e)}"}
+        )
 
 @app.get("/api/health")
 async def health_check():
