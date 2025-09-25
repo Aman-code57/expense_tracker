@@ -1,156 +1,273 @@
-import React, { useState, useRef } from "react";
-import { Link, useNavigate } from "react-router-dom";
-import { toast, ToastContainer } from "react-toastify";
-import "react-toastify/dist/ReactToastify.css";
-import "./SignIn.css";
+import React, { useState, useEffect } from "react";
+import { Pie, Line } from "react-chartjs-2";
+import { useNavigate, Link } from "react-router-dom";
+import {
+  Chart as ChartJS,
+  CategoryScale,
+  LinearScale,
+  ArcElement,
+  PointElement,
+  LineElement,
+  Title,
+  Tooltip,
+  Legend,
+} from "chart.js";
+import "./Dashboard.css";
 
-// Child Input Component
-const InputField = ({ field, value, error, handleChange, handleBlur, inputRef }) => (
-  <div className="input-con">
-    <label htmlFor={field.name}>
-      {field.label} <span className="required">*</span>
-    </label>
-    <input ref={inputRef} type={field.type} id={field.name} name={field.name} placeholder={field.placeholder || ""} value={value}
-      onChange={handleChange}
-      onBlur={handleBlur}
-    />
-    <span className="error">{error}</span>
-  </div>
+ChartJS.register(
+  CategoryScale,
+  LinearScale,
+  ArcElement,
+  PointElement,
+  LineElement,
+  Title,
+  Tooltip,
+  Legend
 );
 
-const SignIn = () => {
+function Dashboard() {
+  const [dashboardData, setDashboardData] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
   const navigate = useNavigate();
-  const [formData, setFormData] = useState({ email: "", password: "" });
-  const [errors, setErrors] = useState({});
-  const [loading, setLoading] = useState(false);
 
-  // Refs for dynamic focus
-  const refs = {
-    email: useRef(null),
-    password: useRef(null),
+  // Logout handler
+  const handleLogout = () => {
+    localStorage.removeItem("access_token");
+    navigate("/signin");
   };
 
-  const validateField = (name, value) => {
-    let error = "";
-    switch (name) {
-      case "email":
-        if (!value) error = "Email is required";
-        else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)) error = "Enter a valid email";
-        break;
-      case "password":
-        if (!value) error = "Password is required";
-        else if (value.length < 6) error = "Password must be at least 6 characters";
-        else if (!/^(?=.*[a-zA-Z])(?=.*[0-9])/.test(value))
-          error = "Password must contain at least 1 letter and 1 number";
-        break;
-      default:
-        break;
-    }
-    setErrors((prev) => ({ ...prev, [name]: error }));
-    return error;
-  };
-
-  const validateAll = () => {
-    let firstErrorField = null;
-    Object.keys(formData).forEach((key) => {
-      const error = validateField(key, formData[key]);
-      if (error && !firstErrorField) firstErrorField = key;
-    });
-    return firstErrorField;
-  };
-
-  const handleChange = (e) => {
-    const { name, value } = e.target;
-    setFormData((prev) => ({ ...prev, [name]: value }));
-    validateField(name, value);
-  };
-
-  const handleBlur = (e) => {
-    validateField(e.target.name, e.target.value);
-  };
-
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    const firstErrorField = validateAll();
-
-    if (firstErrorField) {
-      refs[firstErrorField].current.focus();
-      return;
-    }
-
-    setLoading(true);
-    try {
-      const response = await fetch("http://127.0.0.1:8000/api/signin", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(formData),
-      });
-
-      const data = await response.json();
-
-      if (data.status === "success") {
-        toast.success(data.message);
-        setFormData({ email: "", password: "" });
-        setErrors({});
-        localStorage.setItem("access_token", data.access_token);
-        navigate("/dashboard");
-      } else {
-        toast.error(data.message || "Login failed");
-      }
-    } catch (error) {
-      console.error("API Error:", error);
-      toast.error("Something went wrong. Please try again.");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const fields = [
-    { name: "email", label: "Email", type: "text", placeholder: "Enter your email" },
-    { name: "password", label: "Password", type: "password", placeholder: "Enter your password" },
+  const links = [
+    { href: "/dashboard", label: "Dashboard" },
+    { href: "/income", label: "Income" },
+    { href: "/expense", label: "Expense" },
+    { label: "Logout", onClick: handleLogout },
   ];
 
+  // Fetch dashboard data
+  useEffect(() => {
+    const fetchDashboardData = async () => {
+      try {
+        const token = localStorage.getItem("access_token");
+        const response = await fetch("http://127.0.0.1:8000/api/dashboard", {
+          method: "GET",
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+        });
+
+        const result = await response.json();
+        if (result.status === "success") setDashboardData(result.data);
+        else setError(result.message || "Failed to fetch dashboard data");
+      } catch (err) {
+        setError("Error fetching data: " + err.message);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchDashboardData();
+  }, []);
+
+  const handleEdit = (index) => console.log("Edit:", index);
+  const handleDelete = (index) => console.log("Delete:", index);
+
+  const headers = ["Date", "Category", "Amount", "Description", "Actions"];
+
+  const data =
+    dashboardData?.recent_expenses?.map((expense, index) => [
+      expense.date,
+      expense.category,
+      `₹${expense.amount}`,
+      expense.description,
+      <div key={index} className="actions">
+        <button onClick={() => handleEdit(index)}>Edit</button>
+        <button onClick={() => handleDelete(index)}>Delete</button>
+      </div>,
+    ]) || [];
+
+  if (loading) return <div className="homepage">Loading...</div>;
+  if (error) return <div className="homepage">Error: {error}</div>;
+
+  const pieData = {
+    labels: Object.keys(dashboardData?.category_breakdown || {}),
+    datasets: [
+      {
+        label: "Expenses by Category",
+        data: Object.values(dashboardData?.category_breakdown || {}),
+        backgroundColor: [
+          "#007bff",
+          "#28a745",
+          "#ffc107",
+          "#dc3545",
+          "#6f42c1",
+          "#17a2b8",
+        ],
+      },
+    ],
+  };
+
+  const lineData = {
+    labels: dashboardData?.monthly_trend?.map((m) => m.month) || [],
+    datasets: [
+      {
+        label: "Monthly Spending",
+        data: dashboardData?.monthly_trend?.map((m) => m.total) || [],
+        fill: true,
+        backgroundColor: "rgba(0,123,255,0.1)",
+        borderColor: "#007bff",
+        tension: 0.3,
+      },
+    ],
+  };
+
   return (
-    <div className="app">
-      <h1>Sign In</h1>
-      <form className="input-con" onSubmit={handleSubmit} noValidate>
-        {fields.map((field) => (
-          <InputField
-            key={field.name}
-            field={field}
-            value={formData[field.name]}
-            error={errors[field.name]}
-            handleChange={handleChange}
-            handleBlur={handleBlur}
-            inputRef={refs[field.name]}
-          />
-        ))}
+    <div className="homepage">
+      <nav className="navbar">
+        <h1 className="navbar-title">Expense Tracker</h1>
+        <ul className="navbar-links">
+          {links.map((link, idx) => (
+            <li key={idx}>
+              {link.onClick ? (
+                <button onClick={link.onClick} className="logout-btn">
+                  {link.label}
+                </button>
+              ) : (
+                <Link to={link.href}>{link.label}</Link>
+              )}
+            </li>
+          ))}
+        </ul>
+      </nav>
 
-        <button type="submit" className="btn-submits" disabled={loading}>
-          {loading ? "Signing In..." : "Sign In"}
-        </button>
-
-        <div className="links-rows">
-          <Link to="/forgotpassword" className="forgot-password">
-            Forgot Password?
-          </Link>
-          <Link to="/signup" className="signup-link">
-            Register account? Sign Up
-          </Link>
+      {/* Summary */}
+      <section className="summary">
+        <div className="summary-card gradient1">
+          <h3>Total Spent</h3>
+          <p>₹{dashboardData?.total_spent ?? 0}</p>
         </div>
-      </form>
+        <div className="summary-card gradient2">
+          <h3>Categories</h3>
+          <p>{Object.keys(dashboardData?.category_breakdown || {}).length}</p>
+        </div>
+        <div className="summary-card gradient3">
+          <h3>Monthly Avg</h3>
+          <p>₹{dashboardData?.monthly_average ?? 0}</p>
+        </div>
+      </section>
 
+      {/* Charts */}
+      <section className="charts">
+        <div className="chart-box">
+          <h3>Category Breakdown</h3>
+          <Pie data={pieData} />
+        </div>
+        <div className="chart-box">
+          <h3>Monthly Trend</h3>
+          <Line data={lineData} />
+        </div>
+      </section>
+
+      {/* Recent Expenses */}
+      <section className="expense-list">
+        <h3>Recent Expenses</h3>
+        <div className="table-container">
+          <table className="custom-tables">
+            <thead>
+              <tr>
+                {headers.map((h, idx) => (
+                  <th key={idx}>{h}</th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {data.length === 0 ? (
+                <tr>
+                  <td colSpan={headers.length} style={{ textAlign: "center" }}>
+                    No data
+                  </td>
+                </tr>
+              ) : (
+                data.map((row, idx) => (
+                  <tr key={idx}>
+                    {row.map((cell, i) => (
+                      <td key={i}>{React.isValidElement(cell) ? cell : cell}</td>
+                    ))}
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
+        </div>
+      </section>
+    </div>
+  );
+}
+
+export default Dashboard;
+
+
+
+
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import SignIn from './component/SignIn/SignIn';
+import SignUp from './component/SiginUp/SignUp';
+import ForgotPassword from './component/ForgotPassword/ForgotPassword';
+import OTPForgotPassword from './component/ForgotPassword/OTPForgotPassword';
+import ResetPassword from './component/ForgotPassword/ResetPassword';
+import Dashboard from './component/Dashboard/Dashboard';
+import Income from './component/Dashboard/Income';
+import ProtectedRoute from './component/ProtectedRoute';
+import { ToastContainer } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
+
+function App() {
+  return (
+    <Router>
       <ToastContainer
         position="top-right"
         autoClose={3000}
         hideProgressBar={false}
-        closeOnClick
         pauseOnHover
         draggable
         theme="colored"
       />
-    </div>
-  );
-};
 
-export default SignIn;
+      <Routes>
+        {/* Default redirect */}
+        <Route path="/" element={<Navigate to="/signin" replace />} />
+
+        {/* Public routes */}
+        <Route path="/signin" element={<SignIn />} />
+        <Route path="/signup" element={<SignUp />} />
+        <Route path="/forgotpassword" element={<ForgotPassword />} />
+        <Route path="/otp-forgot-password" element={<OTPForgotPassword />} />
+        <Route path="/reset-password" element={<ResetPassword />} />
+
+        {/* Protected routes */}
+        <Route
+          path="/dashboard"
+          element={
+            <ProtectedRoute>
+              <Dashboard />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/income"
+          element={
+            <ProtectedRoute>
+              <Income />
+            </ProtectedRoute>
+          }
+        />
+
+        {/* Add other protected routes here */}
+      </Routes>
+    </Router>
+  );
+}
+
+export default App;

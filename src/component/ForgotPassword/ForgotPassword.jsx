@@ -54,8 +54,8 @@ const ForgotPassword = () => {
     <div style={{ margin: 0, fontFamily: 'Arial, sans-serif', background: '#f3f4f6', display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '100vh' }}>
       <div className="forgot">
         <h1>Forgot Password</h1>
-        <form className="input-box" onSubmit={handleSubmit} noValidate>
-          <div className="input-box">
+        <form className="input-boxed" onSubmit={handleSubmit} noValidate>
+          <div className="input-boxed">
             <label htmlFor="email">
               Email <span className="required">*</span>
             </label>
@@ -67,7 +67,7 @@ const ForgotPassword = () => {
             <span className="error">{error}</span>
           </div>
 
-          <button type="submit" className="btn-submited" disabled={loading}>
+          <button type="submit" className="btn-submiteds" disabled={loading}>
             {loading ? "Sending..." : "Send OTP"}
           </button>
 

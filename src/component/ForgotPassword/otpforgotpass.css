@@ -23,19 +23,19 @@
   line-height: 1.5;
 }
 
-.input-box {
+.input-boxes {
   display: flex;
   flex-direction: column;
   gap: 15px;
 }
 
-.input-box {
+.input-boxes {
   display: flex;
   flex-direction: column;
   text-align: left;
 }
 
-.input-box label {
+.input-boxes label {
   font-weight: 600;
   margin-bottom: 5px;
   color: #333;
@@ -45,7 +45,7 @@
   color: red;
 }
 
-.input-box input {
+.input-boxes input {
   padding: 10px;
   border-radius: 6px;
   border: 1px solid #ccc;
@@ -54,11 +54,11 @@
   transition: border 0.2s;
 }
 
-.input-box input:focus {
+.input-boxes input:focus {
   border-color: #4a90e2;
 }
 
-.input-box input::placeholder {
+.input-boxes input::placeholder {
   color: black;
 }
 

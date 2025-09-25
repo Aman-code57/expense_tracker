@@ -165,8 +165,8 @@ const OTPForgotPassword = () => {
   const renderStep1 = () => (
     <>
       <h1>Forgot Password</h1>
-      <form className="input-box" onSubmit={handleSendOTP} noValidate>
-        <div className="input-box">
+      <form className="input-boxes" onSubmit={handleSendOTP} noValidate>
+        <div className="input-boxes">
           <label htmlFor="email">
             Email <span className="required">*</span>
           </label>

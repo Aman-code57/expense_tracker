@@ -4,58 +4,57 @@ import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import "./SignIn.css";
 
+
+const InputField = ({ field, value, error, handleChange, handleBlur, inputRef }) => (
+  <div className="input-con">
+    <label htmlFor={field.name}>
+      {field.label} <span className="required">*</span>
+    </label>
+    <input ref={inputRef} type={field.type} id={field.name} name={field.name} placeholder={field.placeholder} value={value}
+      onChange={handleChange}
+      onBlur={handleBlur}
+    />
+    <span className="error">{error}</span>
+  </div>
+);
+
 const SignIn = () => {
-  const navigate = useNavigate(); // for redirecting
+  const navigate = useNavigate();
   const [formData, setFormData] = useState({ email: "", password: "" });
   const [errors, setErrors] = useState({});
   const [loading, setLoading] = useState(false);
 
-  // Dynamic refs
+  // Refs for dynamic focus
   const refs = {
     email: useRef(null),
     password: useRef(null),
   };
 
-  // Field configuration
-  const fields = [
-    {
-      name: "email",
-      label: "Email",
-      type: "text",
-      placeholder: "Enter your email",
-      validate: (value) => {
-        if (!value) return "Email is required";
-        if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)) return "Enter a valid email";
-        return "";
-      },
-    },
-    {
-      name: "password",
-      label: "Password",
-      type: "password",
-      placeholder: "Enter your password",
-      validate: (value) => {
-        if (!value) return "Password is required";
-        if (value.length < 6) return "Password must be at least 6 characters";
-        if (!/^(?=.*[a-zA-Z])(?=.*[0-9])/.test(value))
-          return "Password must contain at least 1 letter and 1 number";
-        return "";
-      },
-    },
-  ];
-
   const validateField = (name, value) => {
-    const field = fields.find((f) => f.name === name);
-    const error = field?.validate(value) || "";
+    let error = "";
+    switch (name) {
+      case "email":
+        if (!value) error = "Email is required";
+        else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)) error = "Enter a valid email";
+        break;
+      case "password":
+        if (!value) error = "Password is required";
+        else if (value.length < 6) error = "Password must be at least 6 characters";
+        else if (!/^(?=.*[a-zA-Z])(?=.*[0-9])/.test(value))
+          error = "Password must contain at least 1 letter and 1 number";
+        break;
+      default:
+        break;
+    }
     setErrors((prev) => ({ ...prev, [name]: error }));
     return error;
   };
 
   const validateAll = () => {
     let firstErrorField = null;
-    fields.forEach(({ name }) => {
-      const error = validateField(name, formData[name]);
-      if (error && !firstErrorField) firstErrorField = name;
+    Object.keys(formData).forEach((key) => {
+      const error = validateField(key, formData[key]);
+      if (error && !firstErrorField) firstErrorField = key;
     });
     return firstErrorField;
   };
@@ -64,6 +63,10 @@ const SignIn = () => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
     validateField(name, value);
+  };
+
+  const handleBlur = (e) => {
+    validateField(e.target.name, e.target.value);
   };
 
   const handleSubmit = async (e) => {
@@ -90,8 +93,6 @@ const SignIn = () => {
         setFormData({ email: "", password: "" });
         setErrors({});
         localStorage.setItem("access_token", data.access_token);
-
-        // Redirect to dashboard
         navigate("/dashboard");
       } else {
         toast.error(data.message || "Login failed");
@@ -104,27 +105,25 @@ const SignIn = () => {
     }
   };
 
+  const fields = [
+    { name: "email", label: "Email", type: "text", placeholder: "Enter your email" },
+    { name: "password", label: "Password", type: "password", placeholder: "Enter your password" },
+  ];
+
   return (
     <div className="app">
       <h1>Sign In</h1>
       <form className="input-con" onSubmit={handleSubmit} noValidate>
         {fields.map((field) => (
-          <div key={field.name} className="input-con">
-            <label htmlFor={field.name}>
-              {field.label} <span className="required">*</span>
-            </label>
-            <input
-              ref={refs[field.name]}
-              type={field.type}
-              id={field.name}
-              name={field.name}
-              placeholder={field.placeholder || ""}
-              value={formData[field.name]}
-              onChange={handleChange}
-              onBlur={(e) => validateField(field.name, e.target.value)}
-            />
-            <span className="error">{errors[field.name]}</span>
-          </div>
+          <InputField
+            key={field.name}
+            field={field}
+            value={formData[field.name]}
+            error={errors[field.name]}
+            handleChange={handleChange}
+            handleBlur={handleBlur}
+            inputRef={refs[field.name]}
+          />
         ))}
 
         <button type="submit" className="btn-submits" disabled={loading}>

@@ -13,14 +13,14 @@ body {
   padding: 30px 40px;
   border-radius: 12px;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-  width: 400px;
+  width: 500px;
   max-width: 90%;
   text-align: center;
 }
 
 h1 {
   margin-bottom: 20px;
-  font-size: 24px;
+  font-size: 28px;
   color: #333;
 }
 
@@ -65,7 +65,7 @@ input[type="text"],
 input[type="password"],
 select {
   width: 100%;
-  padding: 10px;
+  padding: 12px;
   border: 1px solid #ccc;
   border-radius: 6px;
   font-size: 14px;
@@ -88,7 +88,7 @@ select {
 }
 
 .error {
-  font-size: 12px;
+  font-size: 14px;
   color: red;
   margin-top: 4px;
   min-height: 16px;
@@ -154,7 +154,7 @@ select {
   margin-bottom: 10px;
   background: #007bff;
   color: #fff;
-  font-size: 16px;
+  font-size: 18px;
   font-weight: bold;
   border: none;
   border-radius: 8px;

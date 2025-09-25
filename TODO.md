@@ -1,0 +1,6 @@
+- Add errors state to Income.jsx
+- Add validateField function for individual field validation
+- Add onBlur to each input field
+- Display error messages below each field
+- Update validateForm to check for existing errors
+- Clear errors on input change

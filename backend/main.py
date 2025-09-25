@@ -1,7 +1,9 @@
-from fastapi import FastAPI, Depends, HTTPException, status
+from fastapi import FastAPI, Depends, HTTPException, status, BackgroundTasks
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
+from fastapi.responses import JSONResponse
 from sqlalchemy.orm import Session
+from sqlalchemy import func
 from passlib.context import CryptContext
 from datetime import datetime, timedelta
 from jose import JWTError, jwt
@@ -11,15 +13,13 @@ import random
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 from decouple import config, UndefinedValueError
-from fastapi.responses import JSONResponse
 from database import get_db, engine
-from models import Base, User
+from models import Base, User, Expense, Income
 
 Base.metadata.create_all(bind=engine)
 
 app = FastAPI(title="Expense Tracker API", version="1.0.0")
 
-# CORS middleware
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[
@@ -38,24 +38,9 @@ app.add_middleware(
 )
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
-
 SECRET_KEY = "your-secret-key"
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 30
-
-# Safe .env loading
-def safe_config(key, default=None, cast=str):
-    try:
-        return config(key, default=default, cast=cast)
-    except (UnicodeDecodeError, UndefinedValueError, ValueError):
-        print(f"[CONFIG WARNING] Using default for {key}")
-        return default
-
-SMTP_SERVER = safe_config("SMTP_SERVER", default="smtp.gmail.com")
-SMTP_PORT = safe_config("SMTP_PORT", default=587, cast=int)
-EMAIL_USER = safe_config("EMAIL_USER", default="amanraturi5757@gmail.com")
-EMAIL_PASSWORD = safe_config("EMAIL_PASSWORD", default="epif azzt hgjg zvcy")
-
 security = HTTPBearer()
 
 def verify_password(plain_password, hashed_password):
@@ -92,29 +77,41 @@ def validate_email(email: str) -> bool:
 def validate_mobile(mobile: str) -> bool:
     return re.match(r'^\d{10}$', mobile) is not None
 
-def send_email(to_email: str, subject: str, body: str):
+def generate_otp() -> str:
+    return str(random.randint(100000, 999999))
+
+
+def safe_config(key, default=None, cast=str):
+    try:
+        return config(key, default=default, cast=cast)
+    except (UnicodeDecodeError, UndefinedValueError, ValueError):
+        print(f"[CONFIG WARNING] Using default for {key}")
+        return default
+
+SMTP_SERVER = safe_config("SMTP_SERVER", default="smtp.gmail.com")
+SMTP_PORT = safe_config("SMTP_PORT", default=587, cast=int)
+EMAIL_USER = safe_config("EMAIL_USER", default="amanraturi5757@gmail.com")
+EMAIL_PASSWORD = safe_config("EMAIL_PASSWORD", default="epif azzt hgjg zvcy")
+
+def send_email_bg(to_email: str, subject: str, body: str):
     msg = MIMEMultipart()
     msg['From'] = EMAIL_USER
     msg['To'] = to_email
     msg['Subject'] = subject
     msg.attach(MIMEText(body, 'plain'))
+
     try:
         server = smtplib.SMTP(SMTP_SERVER, SMTP_PORT)
         server.starttls()
         server.login(EMAIL_USER, EMAIL_PASSWORD)
         server.sendmail(EMAIL_USER, to_email, msg.as_string())
         server.quit()
-        print(f"Email sent to {to_email}")
+        print(f"[INFO] Email sent to {to_email}")
     except Exception as e:
-        print(f"Failed to send email: {str(e)}")
-        raise e
-
-def generate_otp() -> str:
-    return str(random.randint(100000, 999999))
-
+        print(f"[ERROR] Failed to send email: {str(e)}")
 
 @app.post("/api/signup")
-async def signup(user_data: dict, db: Session = Depends(get_db)):
+async def signup(user_data: dict, db: Session = Depends(get_db), background_tasks: BackgroundTasks = None):
     try:
         fullname = user_data.get("fullname", "").strip()
         email = user_data.get("email", "").strip().lower()
@@ -169,11 +166,13 @@ async def signup(user_data: dict, db: Session = Depends(get_db)):
         db.commit()
         db.refresh(new_user)
 
+   
         return JSONResponse(status_code=201, content={"status": "success", "message": "User registered successfully", "user_id": new_user.id})
     except Exception as e:
         db.rollback()
         return JSONResponse(status_code=500, content={"status": "error", "message": f"Registration failed: {str(e)}"})
 
+# SIGNIN
 @app.post("/api/signin")
 async def signin(credentials: dict, db: Session = Depends(get_db)):
     try:
@@ -192,7 +191,7 @@ async def signin(credentials: dict, db: Session = Depends(get_db)):
         return JSONResponse(status_code=500, content={"status": "error", "message": f"Login failed: {str(e)}"})
 
 @app.post("/api/forgot-password")
-async def forgot_password(request: dict, db: Session = Depends(get_db)):
+async def forgot_password(request: dict, db: Session = Depends(get_db), background_tasks: BackgroundTasks = None):
     try:
         email = request.get("email", "").strip().lower()
         if not email or not validate_email(email):
@@ -207,7 +206,13 @@ async def forgot_password(request: dict, db: Session = Depends(get_db)):
         user.reset_token_expires = datetime.utcnow() + timedelta(hours=1)
         db.commit()
 
-        send_email(user.email, "Password Reset Request", f"Click to reset password: http://localhost:5173/reset-password?token={reset_token}")
+        if background_tasks:
+            background_tasks.add_task(
+                send_email_bg,
+                user.email,
+                "Password Reset Request",
+                f"Click to reset password: http://localhost:5173/reset-password?token={reset_token}"
+            )
 
         return JSONResponse(status_code=200, content={"status": "success", "message": "Password reset link sent!"})
     except Exception as e:
@@ -215,7 +220,7 @@ async def forgot_password(request: dict, db: Session = Depends(get_db)):
         return JSONResponse(status_code=500, content={"status": "error", "message": f"Error: {str(e)}"})
 
 @app.post("/api/send-otp")
-async def send_otp(request: dict, db: Session = Depends(get_db)):
+async def send_otp(request: dict, db: Session = Depends(get_db), background_tasks: BackgroundTasks = None):
     try:
         email = request.get("email", "").strip().lower()
         if not email or not validate_email(email):
@@ -229,7 +234,15 @@ async def send_otp(request: dict, db: Session = Depends(get_db)):
         user.reset_token = otp
         user.reset_token_expires = datetime.utcnow() + timedelta(minutes=10)
         db.commit()
-        send_email(user.email, "OTP for Password Reset", f"Your OTP is {otp}")
+
+        if background_tasks:
+            background_tasks.add_task(
+                send_email_bg,
+                user.email,
+                "OTP for Password Reset",
+                f"Your OTP is {otp}"
+            )
+
         return JSONResponse(status_code=200, content={"status": "success", "message": "OTP sent to your email"})
     except Exception as e:
         db.rollback()
@@ -259,6 +272,7 @@ async def verify_otp(request: dict, db: Session = Depends(get_db)):
     except Exception as e:
         db.rollback()
         return JSONResponse(status_code=500, content={"status": "error", "message": f"Error: {str(e)}"})
+
 
 @app.post("/api/reset-password-with-otp")
 async def reset_password_with_otp(request: dict, db: Session = Depends(get_db)):
@@ -290,17 +304,186 @@ async def get_dashboard_data(email: str = Depends(verify_token), db: Session = D
         if not user:
             raise HTTPException(status_code=404, detail="User not found")
 
+    
+        expenses = db.query(Expense).filter(Expense.user_id == user.id).order_by(Expense.date.desc()).all()
+
+        total_spent = sum(exp.amount for exp in expenses)
+        recent_expenses = [
+            {
+                "date": exp.date.strftime("%Y-%m-%d"),
+                "category": exp.category,
+                "amount": exp.amount,
+                "description": exp.description or ""
+            }
+            for exp in expenses[:5]
+        ]
+
+        category_breakdown = {}
+        for exp in expenses:
+            category_breakdown[exp.category] = category_breakdown.get(exp.category, 0) + exp.amount
+
+        from datetime import datetime, timedelta
+        from collections import defaultdict
+
+        monthly_totals = defaultdict(float)
+        now = datetime.utcnow()
+        two_months_ago = now - timedelta(days=30)
+
+        for exp in expenses:
+            if exp.date >= two_months_ago:
+                month_key = exp.date.strftime("%Y-%m")
+                monthly_totals[month_key] += exp.amount
+
+        monthly_trend = [
+            {"month": month, "total": total}
+            for month, total in sorted(monthly_totals.items())
+        ]
+
+        monthly_average = total_spent / 2 if expenses else 0
+
         dashboard_data = {
-            "total_spent": 0,
-            "recent_expenses": [
-                {"date": "2025-09-20", "category": "Food", "amount": 20.0, "description": "Lunch at Cafe"},
-                {"date": "2025-09-21", "category": "Transport", "amount": 15.0, "description": "Cab Ride"}
-            ],
-            "category_breakdown": {"Food": 2000.0, "Transport": 1500.0, "Other": 1500.0}
+            "total_spent": total_spent,
+            "recent_expenses": recent_expenses,
+            "category_breakdown": category_breakdown,
+            "monthly_trend": monthly_trend,
+            "monthly_average": monthly_average
         }
         return JSONResponse(status_code=200, content={"status": "success", "data": dashboard_data})
     except Exception as e:
         return JSONResponse(status_code=500, content={"status": "error", "message": f"Error fetching dashboard data: {str(e)}"})
+
+@app.get("/api/incomes")
+async def get_incomes(email: str = Depends(verify_token), db: Session = Depends(get_db)):
+    try:
+        user = db.query(User).filter(User.email == email).first()
+        if not user:
+            raise HTTPException(status_code=404, detail="User not found")
+
+        incomes = db.query(Income).filter(Income.user_id == user.id).order_by(Income.income_date.desc()).all()
+        income_list = [
+            {
+                "id": inc.id,
+                "source": inc.source,
+                "amount": inc.amount,
+                "description": inc.description or "",
+                "income_date": inc.income_date.strftime("%Y-%m-%d")
+            }
+            for inc in incomes
+        ]
+        return JSONResponse(status_code=200, content={"status": "success", "data": income_list})
+    except Exception as e:
+        return JSONResponse(status_code=500, content={"status": "error", "message": f"Error fetching incomes: {str(e)}"})
+
+@app.post("/api/incomes")
+async def create_income(income_data: dict, email: str = Depends(verify_token), db: Session = Depends(get_db)):
+    try:
+        user = db.query(User).filter(User.email == email).first()
+        if not user:
+            raise HTTPException(status_code=404, detail="User not found")
+
+        source = income_data.get("source", "").strip()
+        amount = income_data.get("amount")
+        description = income_data.get("description", "").strip()
+        income_date = income_data.get("income_date")
+
+        errors = {}
+        if not source:
+            errors["source"] = "Source is required"
+        if not amount or float(amount) <= 0:
+            errors["amount"] = "Amount must be > 0"
+        if not income_date:
+            errors["income_date"] = "Date is required"
+
+        if errors:
+            return JSONResponse(status_code=400, content={"status": "error", "message": "Validation failed", "errors": errors})
+
+        new_income = Income(
+            user_id=user.id,
+            source=source,
+            amount=float(amount),
+            description=description or None,
+            income_date=datetime.strptime(income_date, "%Y-%m-%d")
+        )
+
+        db.add(new_income)
+        db.commit()
+        db.refresh(new_income)
+
+        return JSONResponse(status_code=201, content={"status": "success", "message": "Income added successfully", "data": {
+            "id": new_income.id,
+            "source": new_income.source,
+            "amount": new_income.amount,
+            "description": new_income.description,
+            "income_date": new_income.income_date.strftime("%Y-%m-%d")
+        }})
+    except Exception as e:
+        db.rollback()
+        return JSONResponse(status_code=500, content={"status": "error", "message": f"Error adding income: {str(e)}"})
+
+@app.put("/api/incomes/{income_id}")
+async def update_income(income_id: int, income_data: dict, email: str = Depends(verify_token), db: Session = Depends(get_db)):
+    try:
+        user = db.query(User).filter(User.email == email).first()
+        if not user:
+            raise HTTPException(status_code=404, detail="User not found")
+
+        income = db.query(Income).filter(Income.id == income_id, Income.user_id == user.id).first()
+        if not income:
+            return JSONResponse(status_code=404, content={"status": "error", "message": "Income not found"})
+
+        source = income_data.get("source", "").strip()
+        amount = income_data.get("amount")
+        description = income_data.get("description", "").strip()
+        income_date = income_data.get("income_date")
+
+        errors = {}
+        if not source:
+            errors["source"] = "Source is required"
+        if not amount or float(amount) <= 0:
+            errors["amount"] = "Amount must be > 0"
+        if not income_date:
+            errors["income_date"] = "Date is required"
+
+        if errors:
+            return JSONResponse(status_code=400, content={"status": "error", "message": "Validation failed", "errors": errors})
+
+        income.source = source
+        income.amount = float(amount)
+        income.description = description or None
+        income.income_date = datetime.strptime(income_date, "%Y-%m-%d")
+
+        db.commit()
+        db.refresh(income)
+
+        return JSONResponse(status_code=200, content={"status": "success", "message": "Income updated successfully", "data": {
+            "id": income.id,
+            "source": income.source,
+            "amount": income.amount,
+            "description": income.description,
+            "income_date": income.income_date.strftime("%Y-%m-%d")
+        }})
+    except Exception as e:
+        db.rollback()
+        return JSONResponse(status_code=500, content={"status": "error", "message": f"Error updating income: {str(e)}"})
+
+@app.delete("/api/incomes/{income_id}")
+async def delete_income(income_id: int, email: str = Depends(verify_token), db: Session = Depends(get_db)):
+    try:
+        user = db.query(User).filter(User.email == email).first()
+        if not user:
+            raise HTTPException(status_code=404, detail="User not found")
+
+        income = db.query(Income).filter(Income.id == income_id, Income.user_id == user.id).first()
+        if not income:
+            return JSONResponse(status_code=404, content={"status": "error", "message": "Income not found"})
+
+        db.delete(income)
+        db.commit()
+
+        return JSONResponse(status_code=200, content={"status": "success", "message": "Income deleted successfully"})
+    except Exception as e:
+        db.rollback()
+        return JSONResponse(status_code=500, content={"status": "error", "message": f"Error deleting income: {str(e)}"})
 
 @app.get("/api/health")
 async def health_check():

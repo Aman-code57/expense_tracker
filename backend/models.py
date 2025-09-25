@@ -17,8 +17,8 @@ class User(Base):
     reset_token = Column(String(200), nullable=True)
     reset_token_expires = Column(DateTime, nullable=True)
 
-    # Relationship with expenses
     expenses = relationship("Expense", back_populates="user")
+    incomes = relationship("Income", back_populates="user")
 
     def __repr__(self):
         return f"<User(id={self.id}, email={self.email}, fullname={self.fullname})>"
@@ -34,9 +34,24 @@ class Expense(Base):
     date = Column(DateTime, default=datetime.utcnow)
     created_at = Column(DateTime, default=datetime.utcnow)
 
-    # Relationship with user
     user = relationship("User", back_populates="expenses")
 
     def __repr__(self):
         return f"<Expense(id={self.id}, amount={self.amount}, category={self.category})>"
+
+class Income(Base):
+    __tablename__ = "incomes"
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    source = Column(String(100), nullable=False)
+    amount = Column(Float, nullable=False)
+    description = Column(Text)
+    income_date = Column(DateTime, nullable=False)
+    created_at = Column(DateTime, default=datetime.utcnow)
+
+    user = relationship("User", back_populates="incomes")
+
+    def __repr__(self):
+        return f"<Income(id={self.id}, source={self.source}, amount={self.amount})>"
 
