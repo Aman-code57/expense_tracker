@@ -7,6 +7,7 @@ import ResetPassword from './component/ForgotPassword/ResetPassword';
 import Dashboard from './component/Dashboard/Dashboard';
 import Income from './component/Dashboard/Income';
 import PrivateRoute from "./component/PrivateRoute";
+import PublicRoute from "./component/PublicRoute";
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 
@@ -24,11 +25,11 @@ function App() {
 
       <Routes>
         <Route path="/" element={<Navigate to="/signin" replace />} />
-        <Route path="/signin" element={<SignIn />} />
-        <Route path="/signup" element={<SignUp />} />
-        <Route path="/forgotpassword" element={<ForgotPassword />} />
-        <Route path="/otp-forgot-password" element={<OTPForgotPassword />} />
-        <Route path="/reset-password" element={<ResetPassword />} />
+        <Route path="/signin" element={<PublicRoute><SignIn /></PublicRoute>} />
+        <Route path="/signup" element={<PublicRoute><SignUp /></PublicRoute>} />
+        <Route path="/forgotpassword" element={<PublicRoute><ForgotPassword /></PublicRoute>} />
+        <Route path="/otp-forgot-password" element={<PublicRoute><OTPForgotPassword /></PublicRoute>} />
+        <Route path="/reset-password" element={<PublicRoute><ResetPassword /></PublicRoute>} />
         <Route
           path="/dashboard"
           element={
@@ -45,6 +46,7 @@ function App() {
             </PrivateRoute>
           }
         />
+        <Route path="*" element={<PublicRoute><Navigate to="/signin" replace /></PublicRoute>} />
       </Routes>
     </Router>
   );

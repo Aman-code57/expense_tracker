@@ -86,7 +86,7 @@ select:focus {
 
 /* Links */
 .links-rows {
-  margin-top: 15px;
+  margin-top: 12px;
   font-size: 0.9rem;
   display: flex;
   justify-content: space-between;
@@ -103,4 +103,8 @@ select:focus {
 
 .forgot-password {
   margin-right: 10px;
+}
+
+.signup-link {
+  margin-top: -0.5px;
 }

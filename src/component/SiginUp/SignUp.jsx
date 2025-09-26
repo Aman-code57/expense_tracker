@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import "./SignUp.css";
+import InputField from "./Inputfield";
 
 const validateField = (name, value, formData) => {
   switch (name) {
@@ -55,56 +56,6 @@ const formatField = (name, value) => {
       return newValue;
     default:
       return value;
-  }
-};
-
-// Reusable Field Component
-const InputField = ({ field, value, error, onChange, onBlur, inputRef }) => {
-  switch (field.type) {
-    case "select":
-      return (
-        <div className="input-container">
-          <label htmlFor={field.name}>
-            {field.label} <span className="required">*</span>
-          </label>
-          <select
-            ref={inputRef}
-            id={field.name}
-            name={field.name}
-            value={value}
-            onChange={onChange}
-            onBlur={onBlur}
-          >
-            <option value="">--Select--</option>
-            {field.options.map((opt) => (
-              <option key={opt} value={opt}>
-                {opt}
-              </option>
-            ))}
-          </select>
-          <span className="error">{error}</span>
-        </div>
-      );
-
-    default:
-      return (
-        <div className="input-container">
-          <label htmlFor={field.name}>
-            {field.label} <span className="required">*</span>
-          </label>
-          <input
-            ref={inputRef}
-            type={field.type}
-            id={field.name}
-            name={field.name}
-            placeholder={field.placeholder || ""}
-            value={value}
-            onChange={onChange}
-            onBlur={onBlur}
-          />
-          <span className="error">{error}</span>
-        </div>
-      );
   }
 };
 

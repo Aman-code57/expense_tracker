@@ -2,21 +2,11 @@ import React, { useState, useRef } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
+import InputField from "./Inputfield";
 import "./SignIn.css";
 
 
-const InputField = ({ field, value, error, handleChange, handleBlur, inputRef }) => (
-  <div className="input-con">
-    <label htmlFor={field.name}>
-      {field.label} <span className="required">*</span>
-    </label>
-    <input ref={inputRef} type={field.type} id={field.name} name={field.name} placeholder={field.placeholder} value={value}
-      onChange={handleChange}
-      onBlur={handleBlur}
-    />
-    <span className="error">{error}</span>
-  </div>
-);
+
 
 const SignIn = () => {
   const navigate = useNavigate();

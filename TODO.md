@@ -1,6 +1,4 @@
-- Add errors state to Income.jsx
-- Add validateField function for individual field validation
-- Add onBlur to each input field
-- Display error messages below each field
-- Update validateForm to check for existing errors
-- Clear errors on input change
+# TODO: Protect All Routes Like Dashboard
+
+- [ ] Add catch-all route in src/App.jsx to redirect unknown paths to /signin for protection
+- [ ] Test the routing by running the dev server and verifying redirects

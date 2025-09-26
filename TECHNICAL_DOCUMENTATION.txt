@@ -1,0 +1,187 @@
+# Technical Documentation: Expense Tracker App
+
+## 1. Project Overview
+The Expense Tracker App is a full-stack web application designed to help users manage their personal finances by tracking expenses and incomes. It features user authentication (signup, signin, password reset with OTP), a dashboard for viewing expense summaries, category breakdowns, and trends, as well as CRUD operations for incomes.
+
+- **Backend**: Built with FastAPI (Python), using SQLAlchemy for ORM and SQLite as the database. Handles API endpoints for authentication, user data, expenses, and incomes.
+- **Frontend**: Built with React (using Vite for development), incorporating React Router for navigation, Chart.js for visualizations, and React Toastify for notifications.
+- **Database**: SQLite (file: expense_tracker.db in root and backend directories).
+- **Key Features**:
+  - User registration and login with JWT-based authentication.
+  - Password recovery via email with OTP verification.
+  - Dashboard: Displays total spent, recent expenses, category breakdown, monthly trends.
+  - Income Management: Add, view, update, delete incomes.
+  - CORS enabled for local development (ports 5173, 5174, 3000).
+- **Current Version**: Frontend v0.0.0 (from package.json), Backend v1.0.0 (from FastAPI title).
+- **Development Environment**: Windows 10, Node.js (for frontend), Python (for backend).
+
+The app follows a client-server architecture:
+- Frontend communicates with backend via RESTful API (e.g., /api/signup, /api/dashboard).
+- Authentication uses JWT tokens stored in localStorage (inferred from PrivateRoute usage).
+- Email notifications for OTP and reset links use SMTP (Gmail by default).
+
+## 2. Project Structure
+The project is organized into root-level files, backend/, public/, and src/ directories.
+
+### Root Directory (c:/Users/HP/Desktop/Expense tracker/expense-tracker-app)
+- **Configuration & Misc**:
+  - .gitignore: Standard Git ignore for node_modules, .env, etc.
+  - eslint.config.js: ESLint configuration for React.
+  - package.json: Frontend dependencies and scripts.
+  - package-lock.json: NPM lockfile.
+  - vite.config.js: Vite configuration for React.
+  - README.md: Basic Vite + React setup guide (recommends TypeScript for production).
+  - TODO.md: Task tracking (empty or user-defined).
+  - expense_tracker.db: SQLite database file.
+  - p.txt, t.txt, validations.txt: Miscellaneous text files (possibly notes or validation rules).
+- **Frontend Entry**:
+  - index.html: Main HTML entry point.
+- **Backend Directory (backend/)**:
+  - database.py: SQLAlchemy session management and engine setup (SQLite).
+  - drop_tables.py: Script to drop database tables (for resets).
+  - main.py: FastAPI app with all endpoints (auth, dashboard, incomes).
+  - models.py: SQLAlchemy models (User, Expense, Income).
+  - requirements.txt: Python dependencies.
+  - test_email.py: Email testing script.
+  - expense_tracker.db: Backend-specific DB copy.
+- **Public Directory (public/)**:
+  - vite.svg: Vite logo (default asset).
+- **Source Directory (src/)**:
+  - App.css: Global styles.
+  - App.jsx: Main React app with routing (BrowserRouter, Routes for auth and protected pages).
+  - index.css: Global CSS resets.
+  - main.jsx: React entry point (renders App to root).
+  - assets/: React logo (react.svg).
+  - component/: React components.
+    - PrivateRoute.jsx: Protects routes (requires auth token).
+    - PublicRoute.jsx: Allows public access (redirects if authenticated).
+    - Dashboard/: Dashboard.jsx (main view), dashboard.css, Income.jsx (income list/form), Income.css.
+    - ForgotPassword/: ForgotPassword.jsx (email input), forgotpassword.css; OTPForgotPassword.jsx (OTP form), otpforgotpass.css; ResetPassword.jsx (new password), resetpassword.css.
+    - SiginUp/: SignUp.jsx (registration form), SignUp.css. (Note: Typo in directory name "SiginUp").
+    - SignIn/: SignIn.jsx (login form), SignIn.css.
+
+### File Count
+- Total: ~35 files (including subdirectories).
+- Core: 10+ backend/frontend files, rest are configs/assets.
+
+## 3. Backend Details (FastAPI)
+- **Framework**: FastAPI 0.104.1, served via Uvicorn 0.24.0.
+- **Database**: SQLAlchemy 2.0.23 ORM with SQLite (no migrations; tables created on startup).
+- **Authentication**: JWT (HS256, 30-min expiry) with bcrypt hashing (passlib). Token verification via HTTPBearer.
+- **Email**: SMTP via smtplib (Gmail default: smtp.gmail.com:587). Uses python-decouple for config (.env recommended).
+- **Validation**: Custom regex for email/mobile/password; Pydantic inferred for requests.
+- **Endpoints** (All under /api/ except root):
+  - **Auth**:
+    - POST /signup: Register user (fullname, email, gender, mobile, password). Validates inputs, checks duplicates, hashes password.
+    - POST /signin: Login (email, password). Returns JWT token and user info.
+    - POST /forgot-password: Send reset link via email (token expires in 1h).
+    - POST /send-otp: Generate/send 6-digit OTP via email (expires 10min).
+    - POST /verify-otp: Validate OTP, issue reset token.
+    - POST /reset-password-with-otp: Reset password using token.
+  - **Dashboard** (Protected):
+    - GET /dashboard: Fetch user expenses (total, recent 5, category breakdown, last 30-day monthly trend, avg monthly).
+  - **Incomes** (Protected, CRUD):
+    - GET /incomes: List all incomes (source, amount, desc, date).
+    - POST /incomes: Add income (validates source, amount>0, date).
+    - PUT /incomes/{id}: Update income.
+    - DELETE /incomes/{id}: Delete income.
+  - **Misc**:
+    - GET /health: API health check.
+    - GET /: Welcome message.
+- **Models** (models.py):
+  - User: id, fullname, email (unique), gender, mobile (unique), password (hashed), created_at, reset_token, reset_token_expires. Relationships: expenses, incomes.
+  - Expense: id, user_id (FK), amount, category, description, date, created_at. (Note: No CRUD endpoints implemented yet.)
+  - Income: id, user_id (FK), source, amount, description, income_date, created_at.
+- **Security**: CORS for local devs; background tasks for emails; error handling with JSONResponse.
+- **Dependencies** (requirements.txt):
+  - fastapi==0.104.1
+  - uvicorn==0.24.0
+  - sqlalchemy==2.0.23
+  - passlib[bcrypt]==1.7.4
+  - python-multipart==0.0.6
+  - python-jose[cryptography]==3.3.0
+  - python-decouple==3.8
+- **Running Backend**:
+  1. Install deps: `pip install -r backend/requirements.txt`
+  2. Set .env: SMTP_SERVER, SMTP_PORT, EMAIL_USER, EMAIL_PASSWORD, SECRET_KEY.
+  3. Run: `cd backend && python main.py` (or `uvicorn main:app --reload --host 127.0.0.1 --port 8000`).
+  - DB auto-creates tables.
+
+## 4. Frontend Details (React + Vite)
+- **Framework**: React 19.1.1, Vite 7.1.7 for HMR/build.
+- **Routing**: React Router DOM 7.9.1 (BrowserRouter). Protected (PrivateRoute) vs. Public (PublicRoute) routes.
+- **UI/UX**: Toastify for notifications; Chart.js + react-chartjs-2 for dashboard charts (inferred from deps and Dashboard.jsx).
+- **Components & Routes** (App.jsx):
+  - / (redirect to /signin)
+  - /signin: SignIn (login form, POST to /api/signin).
+  - /signup: SignUp (registration, POST to /api/signup).
+  - /forgotpassword: ForgotPassword (email for reset, POST to /api/forgot-password).
+  - /otp-forgot-password: OTPForgotPassword (OTP input, POST to /api/send-otp & /verify-otp).
+  - /reset-password: ResetPassword (new password, POST to /api/reset-password-with-otp).
+  - /dashboard: Dashboard (protected; fetches /api/dashboard, displays charts/trends).
+  - /income: Income (protected; CRUD for incomes via /api/incomes).
+  - *: Redirect to /signin.
+- **State/Auth**: Likely uses localStorage for JWT (in PrivateRoute). No Redux/Context shown; form handling via useState/useEffect.
+- **Styling**: CSS modules per component (e.g., SignIn.css). Global: App.css, index.css.
+- **Dependencies** (package.json):
+  - Production: react@^19.1.1, react-dom@^19.1.1, react-router-dom@^7.9.1, react-toastify@^11.0.5, chart.js@^4.5.0, react-chartjs-2@^5.3.0.
+  - Dev: @vitejs/plugin-react@^5.0.3, eslint@^9.36.0, globals@^16.4.0, @types/react@^19.1.13, etc.
+- **Scripts**:
+  - npm run dev: Start dev server (http://localhost:5173).
+  - npm run build: Build for production (dist/).
+  - npm run lint: ESLint check.
+  - npm run preview: Preview build.
+- **Running Frontend**:
+  1. Install deps: `npm install`
+  2. Run: `npm run dev` (proxies API to backend:8000? Config in vite.config.js if needed).
+  - Ensure backend runs on port 8000.
+
+## 5. Database Schema
+- **Engine**: SQLite (expense_tracker.db).
+- **Tables** (Auto-created via Base.metadata.create_all):
+  - users: id (PK), fullname, email (unique), gender, mobilenumber (unique), password, created_at, reset_token, reset_token_expires.
+  - expenses: id (PK), user_id (FK), amount, category, description, date, created_at.
+  - incomes: id (PK), user_id (FK), source, amount, description, income_date, created_at.
+- **Relationships**: One-to-Many (User -> Expenses/Incomes).
+- **Notes**: No indexes beyond uniques; drop_tables.py for cleanup. Expenses lack API endpoints (only dashboard read).
+
+## 6. Setup & Deployment Instructions
+### Local Development
+1. **Backend**:
+   - `cd backend`
+   - `pip install -r requirements.txt`
+   - Create .env with SMTP creds and SECRET_KEY=your-secret-key.
+   - `python main.py` (runs on 127.0.0.1:8000).
+2. **Frontend**:
+   - `npm install`
+   - `npm run dev` (runs on localhost:5173).
+3. **Database**: Auto-initialized. Use DB browser for inspection.
+4. **Testing**:
+   - Auth: Signup/Signin via forms.
+   - Dashboard: Login -> /dashboard (add expenses manually via DB for testing).
+   - Emails: Configure real SMTP; test with test_email.py.
+   - Linting: `npm run lint`.
+
+### Production
+- **Backend**: Deploy FastAPI (e.g., Heroku/Vercel) with Gunicorn/Uvicorn. Use PostgreSQL env var for DB.
+- **Frontend**: `npm run build`, serve dist/ (e.g., Netlify). Update CORS origins.
+- **Security**: Change SECRET_KEY, use HTTPS, env vars for SMTP. Add rate limiting.
+- **CI/CD**: GitHub Actions for lint/test/build.
+
+## 7. Potential Improvements & Limitations
+- **Missing Features**: Expense CRUD endpoints; categories enum; budget goals; export reports.
+- **Security**: Hardcoded SMTP creds in main.py (use .env fully). No refresh tokens. Validate all inputs server-side.
+- **Frontend**: Add loading spinners, error boundaries. Implement expense forms.
+- **Backend**: Add pagination for lists. Use async email (celery?). Migrations with Alembic.
+- **Bugs/Notes**: Typo in "SiginUp" dir. Expenses table populated? (Dashboard assumes data). OTP as reset_token (string vs int).
+- **Performance**: SQLite fine for dev; scale to RDBMS. Charts: Ensure data formats match Chart.js.
+- **Testing**: No unit/integration tests. Add pytest for backend, Jest for frontend.
+
+## 8. Key Files Summary
+- Backend Core: main.py (endpoints), models.py (DB), database.py (session).
+- Frontend Core: App.jsx (routes), components (auth/dashboard).
+- Config: package.json, requirements.txt, .env (create if missing).
+
+For questions or updates, refer to TODO.md or extend this doc.
+
+Generated: [Current Date] by scanning all project files.
