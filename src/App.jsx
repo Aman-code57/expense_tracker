@@ -6,6 +6,7 @@ import OTPForgotPassword from './component/ForgotPassword/OTPForgotPassword';
 import ResetPassword from './component/ForgotPassword/ResetPassword';
 import Dashboard from './component/Dashboard/Dashboard';
 import Income from './component/Dashboard/Income';
+import Expense from './component/Dashboard/Expense';
 import PrivateRoute from "./component/PrivateRoute";
 import PublicRoute from "./component/PublicRoute";
 import { ToastContainer } from "react-toastify";
@@ -43,6 +44,14 @@ function App() {
           element={
             <PrivateRoute>
               <Income />
+            </PrivateRoute>
+          }
+        />
+        <Route
+          path="/expense"
+          element={
+            <PrivateRoute>
+              <Expense />
             </PrivateRoute>
           }
         />

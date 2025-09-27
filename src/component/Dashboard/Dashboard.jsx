@@ -80,7 +80,7 @@ useEffect(() => {
     dashboardData?.recent_expenses?.map((expense, index) => [
       expense.date,
       expense.category,
-      `$${expense.amount}`,
+      `₹${expense.amount}`,
       expense.description,
       <div key={index} className="actions">
         <button onClick={() => handleEdit(index)}>Edit</button>

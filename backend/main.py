@@ -485,6 +485,139 @@ async def delete_income(income_id: int, email: str = Depends(verify_token), db: 
         db.rollback()
         return JSONResponse(status_code=500, content={"status": "error", "message": f"Error deleting income: {str(e)}"})
 
+@app.get("/api/expenses")
+async def get_expenses(email: str = Depends(verify_token), db: Session = Depends(get_db)):
+    try:
+        user = db.query(User).filter(User.email == email).first()
+        if not user:
+            raise HTTPException(status_code=404, detail="User not found")
+
+        expenses = db.query(Expense).filter(Expense.user_id == user.id).order_by(Expense.date.desc()).all()
+        expense_list = [
+            {
+                "id": exp.id,
+                "amount": exp.amount,
+                "category": exp.category,
+                "description": exp.description or "",
+                "date": exp.date.strftime("%Y-%m-%d")
+            }
+            for exp in expenses
+        ]
+        return JSONResponse(status_code=200, content={"status": "success", "data": expense_list})
+    except Exception as e:
+        return JSONResponse(status_code=500, content={"status": "error", "message": f"Error fetching expenses: {str(e)}"})
+
+@app.post("/api/expenses")
+async def create_expense(expense_data: dict, email: str = Depends(verify_token), db: Session = Depends(get_db)):
+    try:
+        user = db.query(User).filter(User.email == email).first()
+        if not user:
+            raise HTTPException(status_code=404, detail="User not found")
+
+        amount = expense_data.get("amount")
+        category = expense_data.get("category", "").strip()
+        description = expense_data.get("description", "").strip()
+        date = expense_data.get("date")
+
+        errors = {}
+        if not amount or float(amount) <= 0:
+            errors["amount"] = "Amount must be > 0"
+        if not category:
+            errors["category"] = "Category is required"
+        if not date:
+            errors["date"] = "Date is required"
+
+        if errors:
+            return JSONResponse(status_code=400, content={"status": "error", "message": "Validation failed", "errors": errors})
+
+        new_expense = Expense(
+            user_id=user.id,
+            amount=float(amount),
+            category=category,
+            description=description or None,
+            date=datetime.strptime(date, "%Y-%m-%d")
+        )
+
+        db.add(new_expense)
+        db.commit()
+        db.refresh(new_expense)
+
+        return JSONResponse(status_code=201, content={"status": "success", "message": "Expense added successfully", "data": {
+            "id": new_expense.id,
+            "amount": new_expense.amount,
+            "category": new_expense.category,
+            "description": new_expense.description,
+            "date": new_expense.date.strftime("%Y-%m-%d")
+        }})
+    except Exception as e:
+        db.rollback()
+        return JSONResponse(status_code=500, content={"status": "error", "message": f"Error adding expense: {str(e)}"})
+
+@app.put("/api/expenses/{expense_id}")
+async def update_expense(expense_id: int, expense_data: dict, email: str = Depends(verify_token), db: Session = Depends(get_db)):
+    try:
+        user = db.query(User).filter(User.email == email).first()
+        if not user:
+            raise HTTPException(status_code=404, detail="User not found")
+
+        expense = db.query(Expense).filter(Expense.id == expense_id, Expense.user_id == user.id).first()
+        if not expense:
+            return JSONResponse(status_code=404, content={"status": "error", "message": "Expense not found"})
+
+        amount = expense_data.get("amount")
+        category = expense_data.get("category", "").strip()
+        description = expense_data.get("description", "").strip()
+        date = expense_data.get("date")
+
+        errors = {}
+        if not amount or float(amount) <= 0:
+            errors["amount"] = "Amount must be > 0"
+        if not category:
+            errors["category"] = "Category is required"
+        if not date:
+            errors["date"] = "Date is required"
+
+        if errors:
+            return JSONResponse(status_code=400, content={"status": "error", "message": "Validation failed", "errors": errors})
+
+        expense.amount = float(amount)
+        expense.category = category
+        expense.description = description or None
+        expense.date = datetime.strptime(date, "%Y-%m-%d")
+
+        db.commit()
+        db.refresh(expense)
+
+        return JSONResponse(status_code=200, content={"status": "success", "message": "Expense updated successfully", "data": {
+            "id": expense.id,
+            "amount": expense.amount,
+            "category": expense.category,
+            "description": expense.description,
+            "date": expense.date.strftime("%Y-%m-%d")
+        }})
+    except Exception as e:
+        db.rollback()
+        return JSONResponse(status_code=500, content={"status": "error", "message": f"Error updating expense: {str(e)}"})
+
+@app.delete("/api/expenses/{expense_id}")
+async def delete_expense(expense_id: int, email: str = Depends(verify_token), db: Session = Depends(get_db)):
+    try:
+        user = db.query(User).filter(User.email == email).first()
+        if not user:
+            raise HTTPException(status_code=404, detail="User not found")
+
+        expense = db.query(Expense).filter(Expense.id == expense_id, Expense.user_id == user.id).first()
+        if not expense:
+            return JSONResponse(status_code=404, content={"status": "error", "message": "Expense not found"})
+
+        db.delete(expense)
+        db.commit()
+
+        return JSONResponse(status_code=200, content={"status": "success", "message": "Expense deleted successfully"})
+    except Exception as e:
+        db.rollback()
+        return JSONResponse(status_code=500, content={"status": "error", "message": f"Error deleting expense: {str(e)}"})
+
 @app.get("/api/health")
 async def health_check():
     return {"status": "healthy", "message": "Expense Tracker API is running"}
