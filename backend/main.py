@@ -1,12 +1,13 @@
-from fastapi import FastAPI, Depends, HTTPException, status, BackgroundTasks
+from fastapi import FastAPI, Depends, HTTPException, status, BackgroundTasks, Query
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from fastapi.responses import JSONResponse
 from sqlalchemy.orm import Session
-from sqlalchemy import func
+from sqlalchemy import func, or_, and_
 from passlib.context import CryptContext
 from datetime import datetime, timedelta
 from jose import JWTError, jwt
+from collections import defaultdict
 import re
 import smtplib
 import random
@@ -40,7 +41,7 @@ app.add_middleware(
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 SECRET_KEY = "your-secret-key"
 ALGORITHM = "HS256"
-ACCESS_TOKEN_EXPIRE_MINUTES = 30
+ACCESS_TOKEN_EXPIRE_MINUTES = 120
 security = HTTPBearer()
 
 def verify_password(plain_password, hashed_password):
@@ -51,7 +52,7 @@ def get_password_hash(password):
 
 def create_access_token(data: dict, expires_delta: timedelta = None):
     to_encode = data.copy()
-    expire = datetime.utcnow() + (expires_delta if expires_delta else timedelta(minutes=15))
+    expire = datetime.utcnow() + (expires_delta if expires_delta else timedelta(minutes=120))
     to_encode.update({"exp": expire})
     return jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
 
@@ -322,9 +323,6 @@ async def get_dashboard_data(email: str = Depends(verify_token), db: Session = D
         for exp in expenses:
             category_breakdown[exp.category] = category_breakdown.get(exp.category, 0) + exp.amount
 
-        from datetime import datetime, timedelta
-        from collections import defaultdict
-
         monthly_totals = defaultdict(float)
         now = datetime.utcnow()
         two_months_ago = now - timedelta(days=30)
@@ -492,7 +490,7 @@ async def get_expenses(email: str = Depends(verify_token), db: Session = Depends
         if not user:
             raise HTTPException(status_code=404, detail="User not found")
 
-        expenses = db.query(Expense).filter(Expense.user_id == user.id).order_by(Expense.date.desc()).all()
+        expenses = db.query(Expense).filter(Expense.user_id == user.id).all()
         expense_list = [
             {
                 "id": exp.id,

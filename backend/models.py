@@ -54,4 +54,3 @@ class Income(Base):
 
     def __repr__(self):
         return f"<Income(id={self.id}, source={self.source}, amount={self.amount})>"
-

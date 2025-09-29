@@ -93,9 +93,9 @@ body, html {
 
 .summary {
   display: flex;
-  gap: 20px;
-  flex-wrap: wrap;
-  width: 90%;
+  gap: 15px;
+  /* flex-wrap: wrap; */
+  width: 100%;
 }
 
 .summary-card {
@@ -105,9 +105,9 @@ body, html {
   border-radius: 12px;
   box-shadow: 0 6px 15px rgba(0, 0, 0, 0.1);
   text-align: center;
-  min-width: 200px;
+  /* min-width: 260px; */
   transition: transform 0.3s ease, box-shadow 0.3s ease;
-  margin-left: 20px;
+  
 }
 
 .summary-card:hover {
@@ -116,17 +116,18 @@ body, html {
 }
 
 .gradient1 {
-  margin-left: 50px;
+  margin-left: 20px;
   background: linear-gradient(135deg, #007bff, #00c6ff);
+  width: 50%;
 }
 
 .gradient2 {
-  margin-left: 90px;
+  margin-left: 100px;
   background: linear-gradient(135deg, #28a745, #7bed9f);
 }
 
 .gradient3 {
-  margin-left: 80px;
+  margin-left: 100px;
   background: linear-gradient(135deg, #ffc107, #ff7e00);
 }
 
@@ -145,7 +146,7 @@ body, html {
   box-shadow: 0 6px 15px rgba(0, 0, 0, 0.08);
   transition: box-shadow 0.3s ease;
   overflow: hidden;
-  margin-left: 30px;
+  margin-left: 50px;
   gap: 20px;
 }
 
@@ -160,8 +161,8 @@ body, html {
 }
 
 .chart-box canvas {
-  width: 80% !important;
-  height: 80% !important;
+  width: 90% !important;
+  height: 90% !important;
   max-width: 80%;
   max-height: 80%;
   margin: 0 auto;
@@ -169,14 +170,14 @@ body, html {
 }
 
 /* Table */
-.expense-list h3 {
+.expenseds-lists h3 {
   font-size: 1.4rem;
   color: #007bff;
   margin-left: 30px;
 }
 
 .table-container {
-  width: 90%;
+  width: 95%;
   overflow: hidden;
   background: #fff;
   color: black;
@@ -217,43 +218,9 @@ body, html {
   background-color: #f8f9fa;
 }
 
-.actions {
-  display: flex;
-  gap: 8px;
-}
 
-.actions button {
-  padding: 8px 14px;
-  border: none;
-  border-radius: 8px;
-  cursor: pointer;
-  font-weight: 500;
-  transition: all 0.3s ease;
-  font-size: 0.9rem;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-}
 
-.actions button:first-child {
-  background: #ffc107;
-  color: #fff;
-}
 
-.actions button:first-child:hover {
-  background: #e0a800;
-  transform: scale(1.05);
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
-}
-
-.actions button:last-child {
-  background: #dc3545;
-  color: #fff;
-}
-
-.actions button:last-child:hover {
-  background: #c82333;
-  transform: scale(1.05);
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
-}
 
 /* Responsive */
 @media (max-width: 1024px) {

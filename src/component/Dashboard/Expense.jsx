@@ -123,8 +123,8 @@ function Expense() {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
-  if (loading) return <div className="homepage">Loading...</div>;
-  if (error) return <div className="homepage">Error: {error}</div>;
+  if (loading) return <div className="homepaged">Loading...</div>;
+  if (error) return <div className="homepaged">Error: {error}</div>;
 
   const headers = ["Date", "Category", "Amount", "Description", "Actions"];
 
@@ -140,16 +140,16 @@ function Expense() {
   ]);
 
   return (
-    <div className="homepage">
-      <nav className="navbar">
-        <h1 className="navbar-title">Expense Management</h1>
+    <div className="homepaged">
+      <nav className="navbared">
+        <h1 className="navbared-titled">Expense Management</h1>
         <button onClick={handleLogout} className="logout-btn">
           Logout
         </button>
       </nav>
 
-      <div className="sidebar">
-        <ul className="sidebar-links">
+      <div className="sidebared">
+        <ul className="sidebared-links">
           {sidebarLinks.map((link, idx) => (
             <li key={idx}>
               <Link to={link.href}>{link.label}</Link>
@@ -157,11 +157,15 @@ function Expense() {
           ))}
         </ul>
       </div>
+      
 
       <div className="main-contents">
+        <div className="adding-bts">
         <button onClick={() => setShowForm(!showForm)}>
           {showForm ? "Cancel" : "Add Expense"}
         </button>
+      </div>
+        
 
         {showForm && (
           <form className="expense-form" onSubmit={handleFormSubmit}>
@@ -182,9 +186,10 @@ function Expense() {
         )}
 
         <section className="expense-list">
-          <h3>Expenses</h3>
-          <div className="table-container">
-            <table className="custom-tables">
+          <h3>Expenses List</h3>
+
+          <div className="tabled-containered">
+            <table className="customed-tableds">
               <thead>
                 <tr>
                   {headers.map((h, idx) => (

@@ -70,11 +70,7 @@ useEffect(() => {
   fetchDashboardData();
 }, []);
 
-
-  const handleEdit = (index) => console.log("Edit:", index);
-  const handleDelete = (index) => console.log("Delete:", index);
-
-  const headers = ["Date", "Category", "Amount", "Description", "Actions"];
+  const headers = ["Date", "Category", "Amount", "Description", ];
 
   const data =
     dashboardData?.recent_expenses?.map((expense, index) => [
@@ -82,10 +78,6 @@ useEffect(() => {
       expense.category,
       `₹${expense.amount}`,
       expense.description,
-      <div key={index} className="actions">
-        <button onClick={() => handleEdit(index)}>Edit</button>
-        <button onClick={() => handleDelete(index)}>Delete</button>
-      </div>,
     ]) || [];
 
   if (loading) return <div className="homepage">Loading...</div>;
@@ -170,7 +162,7 @@ useEffect(() => {
         </section>
 
         {/* Recent Expenses */}
-        <section className="expense-list">
+        <section className="expenseds-lists">
           <h3>Recent Expenses</h3>
           <div className="table-container">
             <table className="custom-tables">
