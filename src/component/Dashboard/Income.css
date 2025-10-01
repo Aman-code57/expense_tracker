@@ -222,8 +222,8 @@ body {
 }
 
 .table-containers {
-  flex: 1 1 auto; /* fill remaining height */
-  width: 100%;   /* full width */
+  flex: 1 1 auto; 
+  width: 100%;   
   overflow-y: auto;
   overflow-x: auto;
 }
@@ -283,7 +283,7 @@ body {
   padding: 8px 14px;
   border: 1px solid #2196f3;
   border-radius: 6px;
-  background: #fff;
+  background: #2196f3;
   cursor: pointer;
 }
 

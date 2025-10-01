@@ -1,19 +1,25 @@
 import React, { useState, useEffect } from "react";
+import { toast, ToastContainer } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 import { useNavigate, Link } from "react-router-dom";
 import "./Expense.css";
 
 function Expense() {
   const [expenses, setExpenses] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState(null);
+  const [searchTerm, setSearchTerm] = useState("");
   const [formData, setFormData] = useState({
     amount: "",
     category: "",
     description: "",
     date: "",
   });
+
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage] = useState(5);
+  const [sortConfig, setSortConfig] = useState({ key: "id", direction: "asc" });
 
   const navigate = useNavigate();
 
@@ -34,6 +40,12 @@ function Expense() {
 
   const fetchExpenses = async () => {
     const token = localStorage.getItem("access_token");
+    if (!token) {
+      toast.error("No access token found.");
+      setLoading(false);
+      return;
+    }
+
     try {
       const response = await fetch("http://127.0.0.1:8000/api/expenses", {
         method: "GET",
@@ -46,10 +58,10 @@ function Expense() {
       if (result.status === "success") {
         setExpenses(result.data);
       } else {
-        setError(result.message || "Failed to fetch expenses");
+        toast.error(result.message || "Failed to fetch expenses");
       }
     } catch (err) {
-      setError("Error fetching expenses: " + err.message);
+      toast.error("Error fetching expenses: " + err.message);
     } finally {
       setLoading(false);
     }
@@ -58,6 +70,11 @@ function Expense() {
   const handleFormSubmit = async (e) => {
     e.preventDefault();
     const token = localStorage.getItem("access_token");
+    if (!token) {
+      toast.error("No access token found.");
+      return;
+    }
+
     const method = editingId ? "PUT" : "POST";
     const url = editingId
       ? `http://127.0.0.1:8000/api/expenses/${editingId}`
@@ -74,20 +91,27 @@ function Expense() {
       });
       const result = await response.json();
       if (result.status === "success") {
-        fetchExpenses();
-        setShowForm(false);
-        setEditingId(null);
-        setFormData({ amount: "", category: "", description: "", date: "" });
+        if (editingId) {
+          setExpenses(
+            expenses.map((exp) => (exp.id === editingId ? result.data : exp))
+          );
+          toast.success("Expense updated!");
+        } else {
+          setExpenses([...expenses, result.data]);
+          toast.success("Expense added!");
+        }
+        resetForm();
       } else {
-        setError(result.message || "Failed to save expense");
+        toast.error(result.message || "Failed to save expense");
       }
     } catch (err) {
-      setError("Error saving expense: " + err.message);
+      toast.error("Error saving expense: " + err.message);
     }
   };
 
   const handleEdit = (expense) => {
     setFormData({
+      id: expense.id,
       amount: expense.amount,
       category: expense.category,
       description: expense.description,
@@ -98,35 +122,78 @@ function Expense() {
   };
 
   const handleDelete = async (id) => {
-    if (!window.confirm("Are you sure you want to delete this expense?")) return;
     const token = localStorage.getItem("access_token");
+    if (!token) {
+      toast.error("No access token found.");
+      return;
+    }
+    if (!window.confirm("Are you sure you want to delete this expense?")) return;
+
     try {
-      const response = await fetch(`http://127.0.0.1:8000/api/expenses/${id}`, {
-        method: "DELETE",
-        headers: {
-          Authorization: `Bearer ${token}`,
-          "Content-Type": "application/json",
-        },
-      });
+      const response = await fetch(
+        `http://127.0.0.1:8000/api/expenses/${id}`,
+        {
+          method: "DELETE",
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
       const result = await response.json();
       if (result.status === "success") {
-        fetchExpenses();
+        setExpenses(expenses.filter((exp) => exp.id !== id));
+        toast.success("Expense deleted!");
       } else {
-        setError(result.message || "Failed to delete expense");
+        toast.error(result.message || "Failed to delete expense");
       }
     } catch (err) {
-      setError("Error deleting expense: " + err.message);
+      toast.error("Error deleting expense: " + err.message);
     }
+  };
+
+  const resetForm = () => {
+    setFormData({ amount: "", category: "", description: "", date: "" });
+    setEditingId(null);
+    setShowForm(false);
   };
 
   const handleInputChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
-  if (loading) return <div className="homepaged">Loading...</div>;
-  if (error) return <div className="homepaged">Error: {error}</div>;
+  const filteredExpenses = expenses.filter(
+    (exp) =>
+      exp.category.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      exp.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      exp.date.includes(searchTerm)
+  );
 
-  const headers = ["Date", "Category", "Amount", "Description", "Actions"];
+  const sortedExpenses = [...filteredExpenses].sort((a, b) => {
+    if (a[sortConfig.key] < b[sortConfig.key])
+      return sortConfig.direction === "asc" ? -1 : 1;
+    if (a[sortConfig.key] > b[sortConfig.key])
+      return sortConfig.direction === "asc" ? 1 : -1;
+    return 0;
+  });
+
+  const indexOfLastItem = currentPage * itemsPerPage;
+  const indexOfFirstItem = indexOfLastItem - itemsPerPage;
+  const currentExpenses = sortedExpenses.slice(
+    indexOfFirstItem,
+    indexOfLastItem
+  );
+  const totalPages = Math.ceil(sortedExpenses.length / itemsPerPage);
+
+  const paginate = (pageNumber) => setCurrentPage(pageNumber);
+
+  const handleSort = (key) => {
+    let direction = "asc";
+    if (sortConfig.key === key && sortConfig.direction === "asc")
+      direction = "desc";
+    setSortConfig({ key, direction });
+  };
+
+  if (loading) return <div className="homepaged">Loading...</div>;
+
+  const headers = ["ID","Date", "Category", "Amount", "Description", "Actions"];
 
   const data = expenses.map((expense) => [
     expense.date,
@@ -160,65 +227,126 @@ function Expense() {
       
 
       <div className="main-contents">
-        <div className="adding-bts">
-        <button onClick={() => setShowForm(!showForm)}>
-          {showForm ? "Cancel" : "Add Expense"}
-        </button>
-      </div>
-        
+        <ToastContainer position="top-right" autoClose={3000} />
+
+        {!showForm && (
+          <button className="btn-creates" onClick={() => setShowForm(true)}>
+            Create Expense
+          </button>
+        )}
+        {showForm && (
+          <button className="btn-cancels" onClick={resetForm}>
+            Cancel
+          </button>
+        )}
 
         {showForm && (
-          <form className="expense-form" onSubmit={handleFormSubmit}>
-            <h3>{editingId ? "Edit Expense" : "Add Expense"}</h3>
-            <input type="number" name="amount" placeholder="Amount" value={formData.amount} onChange={handleInputChange}
-              required/>
-            <input type="text" name="category" placeholder="Category" value={formData.category} onChange={handleInputChange}
-              required/>
-            <textarea name="description" placeholder="Description" value={formData.description} onChange={handleInputChange}
-            />
-            <input type="date" name="date" value={formData.date} onChange={handleInputChange}
-              required/>
-            <button type="submit">{editingId ? "Update" : "Add"}</button>
-            <button type="button" onClick={() => setShowForm(false)}>
-              Cancel
+          <form onSubmit={handleFormSubmit} className="expense-forming">
+            <div className="form-grouping">
+              <label>Amount:</label>
+              <input type="number" name="amount" value={formData.amount} onChange={handleInputChange}required/>
+            </div>
+            <div className="form-grouping">
+              <label>Category:</label>
+              <input type="text" name="category" value={formData.category} onChange={handleInputChange} required/>
+            </div>
+            <div className="form-grouping">
+              <label>Description:</label>
+              <input type="text" name="description" value={formData.description} onChange={handleInputChange}
+              />
+            </div>
+            <div className="form-grouping">
+              <label>Date:</label>
+              <input type="date" name="date" value={formData.date} onChange={handleInputChange} required/>
+            </div>
+            <button type="submit" className="btn-submitedss">
+              {editingId ? "Update Expense" : "Add Expense"}
             </button>
           </form>
         )}
 
-        <section className="expense-list">
-          <h3>Expenses List</h3>
+        {!showForm && (
+          <>
+            <div className="searched-containers">
+              <input
+                type="text"
+                placeholder="Search..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+              />
+            </div>
 
-          <div className="tabled-containered">
-            <table className="customed-tableds">
-              <thead>
-                <tr>
-                  {headers.map((h, idx) => (
-                    <th key={idx}>{h}</th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {data.length === 0 ? (
+            <div className="tableds-containers">
+              <table className="customss-tabled">
+                <thead>
                   <tr>
-                    <td colSpan={headers.length} style={{ textAlign: "center" }}>
-                      No expenses found
-                    </td>
+                    {headers.map((h, idx) => (
+                      <th
+                        key={idx}
+                        onClick={() => handleSort(h.toLowerCase())}
+                        style={{ cursor: "pointer" }}
+                      >
+                        {h}{" "}
+                        {sortConfig.key === h.toLowerCase()
+                          ? sortConfig.direction === "asc"
+                            ? "▲"
+                            : "▼"
+                          : ""}
+                      </th>
+                    ))}
                   </tr>
-                ) : (
-                  data.map((row, idx) => (
-                    <tr key={idx}>
-                      {row.map((cell, i) => (
-                        <td key={i}>
-                          {React.isValidElement(cell) ? cell : cell}
-                        </td>
-                      ))}
+                </thead>
+                <tbody>
+                  {currentExpenses.length === 0 ? (
+                    <tr>
+                      <td colSpan={headers.length} style={{ textAlign: "center" }}>
+                        No data
+                      </td>
                     </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
-          </div>
-        </section>
+                  ) : (
+                    currentExpenses.map((exp) => (
+                      <tr key={exp.id}>
+                        <td>{exp.id}</td>
+                        <td>{exp.date}</td>
+                        <td>{exp.category}</td>
+                        <td>₹{exp.amount}</td>
+                        <td>{exp.description}</td>
+                        <td className="actionss">
+                          <button
+                            className="btn-edit"
+                            onClick={() => handleEdit(exp)}
+                          >
+                            Edit
+                          </button>
+                          <button
+                            className="btn-delete"
+                            onClick={() => handleDelete(exp.id)}
+                          >
+                            Delete
+                          </button>
+                        </td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
+            </div>
+
+            {totalPages > 1 && (
+              <div className="paginationed">
+                {Array.from({ length: totalPages }, (_, i) => (
+                  <button
+                    key={i + 1}
+                    onClick={() => paginate(i + 1)}
+                    className={currentPage === i + 1 ? "active" : ""}
+                  >
+                    {i + 1}
+                  </button>
+                ))}
+              </div>
+            )}
+          </>
+        )}
       </div>
     </div>
   );

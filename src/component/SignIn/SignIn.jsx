@@ -3,6 +3,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import InputField from "./Inputfield";
+import Navbar from "../Navbar";
 import "./SignIn.css";
 
 
@@ -21,7 +22,6 @@ const SignIn = () => {
     }
   }, [navigate]);
 
-  // Refs for dynamic focus
   const refs = {
     email: useRef(null),
     password: useRef(null),
@@ -108,44 +108,47 @@ const SignIn = () => {
   ];
 
   return (
-    <div className="app">
-      <h1>Sign In</h1>
-      <form className="input-con" onSubmit={handleSubmit} noValidate>
-        {fields.map((field) => (
-          <InputField
-            key={field.name}
-            field={field}
-            value={formData[field.name]}
-            error={errors[field.name]}
-            handleChange={handleChange}
-            handleBlur={handleBlur}
-            inputRef={refs[field.name]}
-          />
-        ))}
+    <div>
+      <Navbar />
+      <div className="app">
+        <h1>Sign In</h1>
+        <form className="input-con" onSubmit={handleSubmit} noValidate>
+          {fields.map((field) => (
+            <InputField
+              key={field.name}
+              field={field}
+              value={formData[field.name]}
+              error={errors[field.name]}
+              handleChange={handleChange}
+              handleBlur={handleBlur}
+              inputRef={refs[field.name]}
+            />
+          ))}
 
-        <button type="submit" className="btn-submits" disabled={loading}>
-          {loading ? "Signing In..." : "Sign In"}
-        </button>
+          <button type="submit" className="btn-submits" disabled={loading}>
+            {loading ? "Signing In..." : "Sign In"}
+          </button>
 
-        <div className="links-rows">
-          <Link to="/forgotpassword" className="forgot-password">
-            Forgot Password?
-          </Link>
-          <Link to="/signup" className="signup-link">
-            Register account? Sign Up
-          </Link>
-        </div>
-      </form>
+          <div className="links-rows">
+            <Link to="/forgotpassword" className="forgot-password">
+              Forgot Password?
+            </Link>
+            <Link to="/signup" className="signup-link">
+              Register account? Sign Up
+            </Link>
+          </div>
+        </form>
 
-      <ToastContainer
-        position="top-right"
-        autoClose={3000}
-        hideProgressBar={false}
-        closeOnClick
-        pauseOnHover
-        draggable
-        theme="colored"
-      />
+        <ToastContainer
+          position="top-right"
+          autoClose={3000}
+          hideProgressBar={false}
+          closeOnClick
+          pauseOnHover
+          draggable
+          theme="colored"
+        />
+      </div>
     </div>
   );
 };

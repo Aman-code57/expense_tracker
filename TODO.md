@@ -1,16 +1,5 @@
-# TODO: Revert Expense Feature to Simple Version
+# TODO: Update Navbar for SignIn and SignUp Pages
 
-## Backend Changes
-- [x] Revert GET /api/expenses endpoint in backend/main.py to simple version without query parameters
-- [x] Remove advanced filtering, sorting, and pagination logic
-
-## Frontend Changes
-- [x] Remove state variables for pagination, sorting, and filters from Expense.jsx
-- [x] Remove UI elements: filter form, sortable table headers, pagination controls
-- [x] Revert fetchExpenses function to simple GET request without query params
-- [x] Simplify table rendering to display all data without pagination
-
-## Testing
-- [ ] Test backend API returns all expenses without parameters
-- [ ] Test frontend displays all expenses in simple table
-- [ ] Verify CRUD operations still function correctly
+- [x] Update Navbar.jsx to set background color to blue and font color to white
+- [x] Ensure navbar is positioned at the top with heading on the left side (already in place)
+- [ ] Test SignIn and SignUp pages to confirm navbar styling

@@ -4,6 +4,7 @@ import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import "./SignUp.css";
 import InputField from "./Inputfield";
+import Navbar from "../Navbar";
 
 const validateField = (name, value, formData) => {
   switch (name) {
@@ -34,15 +35,11 @@ const validateField = (name, value, formData) => {
       if (value.length < 6) return "Password must be at least 6 characters";
       if (!/^(?=.*[a-zA-Z])(?=.*[0-9])/.test(value))
         return "Password must contain at least 1 letter & 1 number";
-      return "";
 
-    case "confirmPassword":
-      if (!value) return "Please confirm password";
-      if (value !== formData.password) return "Passwords do not match";
-      return "";
+      if (formData.confirmPassword && value !== formData.confirmPassword)
+        return "Passwords do not match";
 
-    default:
-      return "";
+    return "";
   }
 };
 
@@ -160,57 +157,60 @@ const SignUp = () => {
   ];
 
   return (
-    <div className="apps">
-      <h1>Sign Up</h1>
-      <form className="input-container" onSubmit={handleSubmit} noValidate>
-        {fieldPairs.map((pair, idx) => (
-          <div key={idx} className="input-row two-cols">
-            {pair.map((name) => {
-              const field = fields.find((f) => f.name === name);
-              return (
-                <InputField
-                  key={name}
-                  field={field}
-                  value={formData[name]}
-                  error={errors[name]}
-                  onChange={handleChange}
-                  onBlur={(e) =>
-                    setErrors((prev) => ({
-                      ...prev,
-                      [name]: validateField(name, e.target.value, formData),
-                    }))
-                  }
-                  inputRef={refs[name]}
-                />
-              );
-            })}
-          </div>
-        ))}
+    <div>
+      <Navbar />
+      <div className="apps">
+        <h1>Sign Up</h1>
+        <form className="input-container" onSubmit={handleSubmit} noValidate>
+          {fieldPairs.map((pair, idx) => (
+            <div key={idx} className="input-row two-cols">
+              {pair.map((name) => {
+                const field = fields.find((f) => f.name === name);
+                return (
+                  <InputField
+                    key={name}
+                    field={field}
+                    value={formData[name]}
+                    error={errors[name]}
+                    onChange={handleChange}
+                    onBlur={(e) =>
+                      setErrors((prev) => ({
+                        ...prev,
+                        [name]: validateField(name, e.target.value, formData),
+                      }))
+                    }
+                    inputRef={refs[name]}
+                  />
+                );
+              })}
+            </div>
+          ))}
 
-        <div className="checkbox-container">
-          <label>
-            <input
-              type="checkbox"
-              checked={termsAccepted}
-              onChange={(e) => setTermsAccepted(e.target.checked)}
-            />{" "}
-            I accept the <a href="#">Terms & Conditions</a>{" "}
-            <span className="required">*</span>
-          </label>
+          <div className="checkbox-container">
+            <label>
+              <input
+                type="checkbox"
+                checked={termsAccepted}
+                onChange={(e) => setTermsAccepted(e.target.checked)}
+              />{" "}
+              I accept the <a href="#">Terms & Conditions</a>{" "}
+              <span className="required">*</span>
+            </label>
+          </div>
+
+          <button type="submit" className="btn-submit">
+            Submit
+          </button>
+        </form>
+
+        <div className="link-row">
+          <p>
+            Already have an account? <Link to="/signin">Sign In</Link>
+          </p>
         </div>
 
-        <button type="submit" className="btn-submit">
-          Submit
-        </button>
-      </form>
-
-      <div className="link-row">
-        <p>
-          Already have an account? <Link to="/signin">Sign In</Link>
-        </p>
+        <ToastContainer position="top-right" autoClose={3000} theme="colored" />
       </div>
-
-      <ToastContainer position="top-right" autoClose={3000} theme="colored" />
     </div>
   );
 };

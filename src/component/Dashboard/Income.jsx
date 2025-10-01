@@ -41,7 +41,7 @@ function Income() {
     navigate("/signin");
   };
 
-  const headers = ["Source", "Amount", "Description", "Date", "Actions"];
+  const headers = ["ID","Source", "Amount", "Description", "Date", "Actions"];
 
   useEffect(() => {
     fetchIncomes();
@@ -151,6 +151,7 @@ function Income() {
   const handleEdit = (id) => {
     const income = incomes.find((inc) => inc.id === id);
     setFormData({
+      id : income.id,
       source: income.source,
       amount: income.amount,
       description: income.description,
@@ -268,36 +269,21 @@ function Income() {
             <form onSubmit={handleSubmit} className="income-forming">
               <div className="form-grouping">
                 <label>Source:</label>
-                <input
-                  type="text"
-                  name="source"
-                  value={formData.source}
-                  onChange={handleInputChange}
-                  onBlur={() => validateField("source", formData.source)}
+                <input type="text" name="source" value={formData.source} onChange={handleInputChange} onBlur={() => validateField("source", formData.source)}
                   required
                 />
                 {errors.source && <span className="error">{errors.source}</span>}
               </div>
               <div className="form-grouping">
                 <label>Amount:</label>
-                <input
-                  type="number"
-                  name="amount"
-                  value={formData.amount}
-                  onChange={handleInputChange}
-                  onBlur={() => validateField("amount", formData.amount)}
+                <input type="number" name="amount" value={formData.amount} onChange={handleInputChange} onBlur={() => validateField("amount", formData.amount)}
                   required
                 />
                 {errors.amount && <span className="error">{errors.amount}</span>}
               </div>
               <div className="form-grouping">
                 <label>Description:</label>
-                <input
-                  type="text"
-                  name="description"
-                  value={formData.description}
-                  onChange={handleInputChange}
-                />
+                <input type="text" name="description" value={formData.description} onChange={handleInputChange}/>
               </div>
               <div className="form-grouping">
                 <label>Date:</label>
@@ -358,6 +344,7 @@ function Income() {
                     ) : (
                       currentIncomes.map((inc) => (
                         <tr key={inc.id}>
+                          <td>{inc.id}</td>
                           <td>{inc.source}</td>
                           <td>₹{inc.amount}</td>
                           <td>{inc.description}</td>
