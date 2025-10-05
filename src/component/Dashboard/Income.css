@@ -256,7 +256,7 @@ body {
 .custom-tabled tr:nth-child(even) { background: #f9f9f9; }
 .custom-tabled tr:hover { background: #e3f2fd; }
 
-/* Actions buttons inside table */
+
 .actions button {
   margin-right: 6px;
   padding: 6px 12px;

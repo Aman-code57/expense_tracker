@@ -141,8 +141,8 @@ useEffect(() => {
             <p>₹{dashboardData?.total_spent ?? 0}</p>
           </div>
           <div className="summary-card gradient2">
-            <h3>Categories</h3>
-            <p>{Object.keys(dashboardData?.category_breakdown || {}).length}</p>
+            <h3>Total Income</h3>
+            <p>₹{dashboardData?.total_income ?? 0}</p>
           </div>
           <div className="summary-card gradient3">
             <h3>Monthly Avg</h3>

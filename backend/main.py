@@ -307,8 +307,10 @@ async def get_dashboard_data(email: str = Depends(verify_token), db: Session = D
 
     
         expenses = db.query(Expense).filter(Expense.user_id == user.id).order_by(Expense.date.desc()).all()
+        incomes = db.query(Income).filter(Income.user_id == user.id).all()
 
         total_spent = sum(exp.amount for exp in expenses)
+        total_income = sum(inc.amount for inc in incomes)
         recent_expenses = [
             {
                 "date": exp.date.strftime("%Y-%m-%d"),
@@ -341,6 +343,7 @@ async def get_dashboard_data(email: str = Depends(verify_token), db: Session = D
 
         dashboard_data = {
             "total_spent": total_spent,
+            "total_income": total_income,
             "recent_expenses": recent_expenses,
             "category_breakdown": category_breakdown,
             "monthly_trend": monthly_trend,
