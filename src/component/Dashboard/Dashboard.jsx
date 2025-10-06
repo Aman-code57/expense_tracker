@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { Pie, Line } from "react-chartjs-2";
-import { useNavigate, Link } from "react-router-dom";
+import { useNavigate, NavLink } from "react-router-dom";
 import {
   Chart as ChartJS,
   CategoryScale,
@@ -13,6 +13,7 @@ import {
   Legend,
 } from "chart.js";
 import "./Dashboard.css";
+import { formatIndianCurrency } from "./utils";
 
 ChartJS.register(
   CategoryScale,
@@ -76,7 +77,7 @@ useEffect(() => {
     dashboardData?.recent_expenses?.map((expense, index) => [
       expense.date,
       expense.category,
-      `₹${expense.amount}`,
+      `₹${formatIndianCurrency(expense.amount)}`,
       expense.description,
     ]) || [];
 
@@ -87,7 +88,7 @@ useEffect(() => {
     labels: Object.keys(dashboardData?.category_breakdown || {}),
     datasets: [
       {
-        label: "Expenses by Category",
+        label: "Category",
         data: Object.values(dashboardData?.category_breakdown || {}),
         backgroundColor: [
           "#007bff",
@@ -96,6 +97,9 @@ useEffect(() => {
           "#dc3545",
           "#6f42c1",
           "#17a2b8",
+          "red",
+          "yellowgreen",
+          "purple",
         ],
       },
     ],
@@ -105,11 +109,19 @@ useEffect(() => {
     labels: dashboardData?.monthly_trend?.map((m) => m.month) || [],
     datasets: [
       {
-        label: "Monthly Spending",
-        data: dashboardData?.monthly_trend?.map((m) => m.total) || [],
+        label: "Monthly Income",
+        data: dashboardData?.monthly_trend?.map((m) => m.income) || [],
         fill: true,
-        backgroundColor: "rgba(0,123,255,0.1)",
-        borderColor: "#007bff",
+        backgroundColor: "rgba(40, 167, 69, 0.1)",
+        borderColor: "#28a745",
+        tension: 0.3,
+      },
+      {
+        label: "Monthly Expense",
+        data: dashboardData?.monthly_trend?.map((m) => m.expense) || [],
+        fill: true,
+        backgroundColor: "rgba(220, 53, 69, 0.1)",
+        borderColor: "#dc3545",
         tension: 0.3,
       },
     ],
@@ -128,7 +140,7 @@ useEffect(() => {
         <ul className="sidebar-links">
           {sidebarLinks.map((link, idx) => (
             <li key={idx}>
-              <Link to={link.href}>{link.label}</Link>
+              <NavLink to={link.href} className={({ isActive }) => isActive ? 'active' : ''}>{link.label}</NavLink>
             </li>
           ))}
         </ul>
@@ -138,15 +150,15 @@ useEffect(() => {
         <section className="summary">
           <div className="summary-card gradient1">
             <h3>Total Spent</h3>
-            <p>₹{dashboardData?.total_spent ?? 0}</p>
+            <p>₹{formatIndianCurrency(dashboardData?.total_spent ?? 0)}</p>
           </div>
           <div className="summary-card gradient2">
             <h3>Total Income</h3>
-            <p>₹{dashboardData?.total_income ?? 0}</p>
+            <p>₹{formatIndianCurrency(dashboardData?.total_income ?? 0)}</p>
           </div>
           <div className="summary-card gradient3">
             <h3>Monthly Avg</h3>
-            <p>₹{dashboardData?.monthly_average ?? 0}</p>
+            <p>₹{formatIndianCurrency(dashboardData?.monthly_average ?? 0)}</p>
           </div>
         </section>
 

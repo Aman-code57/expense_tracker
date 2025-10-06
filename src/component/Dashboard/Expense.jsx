@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from "react";
 import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
-import { useNavigate, Link } from "react-router-dom";
+import { useNavigate, NavLink } from "react-router-dom";
 import "./Expense.css";
+import { formatIndianCurrency } from "./utils";
 
 function Expense() {
   const [expenses, setExpenses] = useState([]);
@@ -11,6 +12,13 @@ function Expense() {
   const [editingId, setEditingId] = useState(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [formData, setFormData] = useState({
+    amount: "",
+    category: "",
+    description: "",
+    date: "",
+  });
+
+  const [errors, setErrors] = useState({
     amount: "",
     category: "",
     description: "",
@@ -67,8 +75,44 @@ function Expense() {
     }
   };
 
+  const validateField = (name, value) => {
+    let error = "";
+    switch (name) {
+      case "category":
+        if (!value.trim()) {
+          error = "Category is required";
+        } else if (value.length < 3 || value.length > 15) {
+          error = "Category must be between 3 and 15 characters";
+        } else if (!/^[A-Z]/.test(value)) {
+          error = "Category must start with a capital letter";
+        }
+        break;
+      case "amount":
+        if (!value || parseFloat(value) <= 0) error = "Amount must be > 0";
+        break;
+      case "description":
+        if (value.length > 150) error = "Description must be 150 characters or less";
+        break;
+      case "date":
+        if (!value) error = "Date is required";
+        break;
+      default:
+        break;
+    }
+    setErrors((prevErrors) => ({ ...prevErrors, [name]: error }));
+  };
+
+  const validateForm = () => {
+    validateField("category", formData.category);
+    validateField("amount", formData.amount);
+    validateField("date", formData.date);
+    return !Object.values(errors).some((error) => error);
+  };
+
   const handleFormSubmit = async (e) => {
     e.preventDefault();
+    if (!validateForm()) return;
+
     const token = localStorage.getItem("access_token");
     if (!token) {
       toast.error("No access token found.");
@@ -117,6 +161,7 @@ function Expense() {
       description: expense.description,
       date: expense.date,
     });
+    setErrors({ amount: "", category: "", description: "", date: "" });
     setEditingId(expense.id);
     setShowForm(true);
   };
@@ -151,12 +196,24 @@ function Expense() {
 
   const resetForm = () => {
     setFormData({ amount: "", category: "", description: "", date: "" });
+    setErrors({ amount: "", category: "", description: "", date: "" });
     setEditingId(null);
     setShowForm(false);
   };
 
   const handleInputChange = (e) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value });
+    const { name, value } = e.target;
+    let processedValue = value;
+    if (name === "description" && value.length > 100) {
+      processedValue = value.substring(0, 100);
+    }
+    if (name === "category") {
+      processedValue = value.charAt(0).toUpperCase() + value.slice(1);
+    }
+    setFormData({ ...formData, [name]: processedValue });
+    if (errors[name]) {
+      setErrors({ ...errors, [name]: "" });
+    }
   };
 
   const filteredExpenses = expenses.filter(
@@ -191,7 +248,7 @@ function Expense() {
     setSortConfig({ key, direction });
   };
 
-  if (loading) return <div className="homepaged">Loading...</div>;
+  if (loading) return <div className="homepage">Loading...</div>;
 
   const headers = ["ID","Date", "Category", "Amount", "Description", "Actions"];
 
@@ -207,26 +264,26 @@ function Expense() {
   ]);
 
   return (
-    <div className="homepaged">
-      <nav className="navbared">
-        <h1 className="navbared-titled">Expense Management</h1>
+    <div className="homepage">
+      <nav className="navbar">
+        <h1 className="navbar-title">Expense Management</h1>
         <button onClick={handleLogout} className="logout-btn">
           Logout
         </button>
       </nav>
 
-      <div className="sidebared">
-        <ul className="sidebared-links">
+      <div className="sidebar">
+        <ul className="sidebar-links">
           {sidebarLinks.map((link, idx) => (
             <li key={idx}>
-              <Link to={link.href}>{link.label}</Link>
+              <NavLink to={link.href} className={({ isActive }) => isActive ? 'active' : ''}>{link.label}</NavLink>
             </li>
           ))}
         </ul>
       </div>
-      
 
-      <div className="main-contents">
+      <div className="main-content">
+        <div className="income-containers">
         <ToastContainer position="top-right" autoClose={3000} />
 
         {!showForm && (
@@ -241,25 +298,39 @@ function Expense() {
         )}
 
         {showForm && (
-          <form onSubmit={handleFormSubmit} className="expense-forming">
+          <form onSubmit={handleFormSubmit} className="income-forming">
             <div className="form-grouping">
               <label>Amount:</label>
-              <input type="number" name="amount" value={formData.amount} onChange={handleInputChange}required/>
+              <input type="number" name="amount" value={formData.amount} onChange={handleInputChange}
+                onBlur={() => validateField("amount", formData.amount)}
+                required
+              />
+              {errors.amount && <span className="error">{errors.amount}</span>}
             </div>
             <div className="form-grouping">
               <label>Category:</label>
-              <input type="text" name="category" value={formData.category} onChange={handleInputChange} required/>
+              <input type="text" name="category" value={formData.category} onChange={handleInputChange}
+                onBlur={() => validateField("category", formData.category)}
+                required
+              />
+              {errors.category && <span className="error">{errors.category}</span>}
             </div>
             <div className="form-grouping">
               <label>Description:</label>
               <input type="text" name="description" value={formData.description} onChange={handleInputChange}
+                onBlur={() => validateField("description", formData.description)}
               />
+              {errors.description && <span className="error">{errors.description}</span>}
             </div>
             <div className="form-grouping">
               <label>Date:</label>
-              <input type="date" name="date" value={formData.date} onChange={handleInputChange} required/>
+              <input type="date" name="date" value={formData.date} onChange={handleInputChange}
+                onBlur={() => validateField("date", formData.date)}
+                required
+              />
+              {errors.date && <span className="error">{errors.date}</span>}
             </div>
-            <button type="submit" className="btn-submitedss">
+            <button type="submit" className="btn-submits">
               {editingId ? "Update Expense" : "Add Expense"}
             </button>
           </form>
@@ -267,7 +338,7 @@ function Expense() {
 
         {!showForm && (
           <>
-            <div className="searched-containers">
+            <div className="search-container">
               <input
                 type="text"
                 placeholder="Search..."
@@ -276,8 +347,8 @@ function Expense() {
               />
             </div>
 
-            <div className="tableds-containers">
-              <table className="customss-tabled">
+            <div className="table-containers">
+              <table className="custom-tabled">
                 <thead>
                   <tr>
                     {headers.map((h, idx) => (
@@ -309,9 +380,9 @@ function Expense() {
                         <td>{exp.id}</td>
                         <td>{exp.date}</td>
                         <td>{exp.category}</td>
-                        <td>₹{exp.amount}</td>
+                        <td>₹{formatIndianCurrency(exp.amount)}</td>
                         <td>{exp.description}</td>
-                        <td className="actionss">
+                        <td className="actions">
                           <button
                             className="btn-edit"
                             onClick={() => handleEdit(exp)}
@@ -333,7 +404,7 @@ function Expense() {
             </div>
 
             {totalPages > 1 && (
-              <div className="paginationed">
+              <div className="pagination">
                 {Array.from({ length: totalPages }, (_, i) => (
                   <button
                     key={i + 1}
@@ -347,6 +418,7 @@ function Expense() {
             )}
           </>
         )}
+        </div>
       </div>
     </div>
   );

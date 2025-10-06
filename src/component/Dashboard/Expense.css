@@ -176,14 +176,13 @@ body, html {
 }
 
 .actionss button:last-child {
-  background: #dc3545;
+  background: #dc3545 !important;
   width: 80px;
-  color: #fff;
   margin-right: 100px;
 }
 
 .actionss button:last-child:hover {
-  background: #c82333;
+  background: #c82333 !important;
   transform: scale(1.05);
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
 }
@@ -238,6 +237,13 @@ body, html {
 
 .btn-cancels:hover {
   background: #5a6268;
+}
+
+.error {
+  color: #f44336;
+  font-size: 12px;
+  margin-top: 5px;
+  display: block;
 }
 
 .expense-forming {

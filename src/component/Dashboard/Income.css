@@ -253,7 +253,7 @@ body {
   z-index: 2;
 }
 
-.custom-tabled tr:nth-child(even) { background: #f9f9f9; }
+.custom-tabled tr:nth-child(even) { background: #e11717; }
 .custom-tabled tr:hover { background: #e3f2fd; }
 
 
@@ -268,8 +268,8 @@ body {
 .btn-edit { background: #ffc107; color: #000; }
 .btn-edit:hover { background: #e0a800; }
 
-.btn-delete { background: #f44336; color: #fff; }
-.btn-delete:hover { background: #d32f2f; }
+.btn-delete { background: rgb(208, 63, 63); color: black; border: 1px solid #ccc; }
+.btn-delete:hover { background: red; }
 
 
 .pagination {

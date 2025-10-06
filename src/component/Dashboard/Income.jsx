@@ -2,7 +2,8 @@ import React, { useState, useEffect } from "react";
 import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import "./Income.css";
-import { useNavigate, Link } from "react-router-dom";
+import { useNavigate, NavLink } from "react-router-dom";
+import { formatIndianCurrency } from "./utils";
 
 function Income() {
   const [incomes, setIncomes] = useState([]);
@@ -72,7 +73,11 @@ function Income() {
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
-    setFormData({ ...formData, [name]: value });
+    let processedValue = value;
+    if (name === "description" && value.length > 150) {
+      processedValue = value.substring(0, 150);
+    }
+    setFormData({ ...formData, [name]: processedValue });
     if (errors[name]) {
       setErrors({ ...errors, [name]: "" });
     }
@@ -86,6 +91,9 @@ function Income() {
         break;
       case "amount":
         if (!value || parseFloat(value) <= 0) error = "Amount must be > 0";
+        break;
+      case "description":
+        if (value.length > 100) error = "Description must be 100 characters or less";
         break;
       case "income_date":
         if (!value) error = "Date is required";
@@ -244,7 +252,7 @@ function Income() {
         <ul className="sidebar-links">
           {sidebarLinks.map((link, idx) => (
             <li key={idx}>
-              <Link to={link.href}>{link.label}</Link>
+              <NavLink to={link.href} className={({ isActive }) => isActive ? 'active' : ''}>{link.label}</NavLink>
             </li>
           ))}
         </ul>
@@ -283,7 +291,8 @@ function Income() {
               </div>
               <div className="form-grouping">
                 <label>Description:</label>
-                <input type="text" name="description" value={formData.description} onChange={handleInputChange}/>
+                <input type="text" name="description" value={formData.description} onChange={handleInputChange} onBlur={() => validateField("description", formData.description)}/>
+                {errors.description && <span className="error">{errors.description}</span>}
               </div>
               <div className="form-grouping">
                 <label>Date:</label>
@@ -346,7 +355,7 @@ function Income() {
                         <tr key={inc.id}>
                           <td>{inc.id}</td>
                           <td>{inc.source}</td>
-                          <td>₹{inc.amount}</td>
+                          <td>₹{formatIndianCurrency(inc.amount)}</td>
                           <td>{inc.description}</td>
                           <td>{inc.income_date}</td>
                           <td className="actions">

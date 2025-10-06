@@ -1,2 +1,0 @@
-- [x] Update backend/main.py to calculate total_income in /api/dashboard endpoint
-- [x] Update src/component/Dashboard/Dashboard.jsx to change Categories card to Total Income
