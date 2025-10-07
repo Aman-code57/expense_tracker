@@ -50,7 +50,7 @@ useEffect(() => {
     const token = localStorage.getItem("access_token");
 
     try {
-      const response = await fetch("http://127.0.0.1:8000/api/dashboard", {
+      const response = await fetch("http://127.0.0.1:8000/dashboard", {
         method: "GET",
         headers: {
           Authorization: `Bearer ${token}`,

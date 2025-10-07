@@ -65,7 +65,7 @@ const OTPForgotPassword = () => {
 
     setLoading(true);
     try {
-      const response = await fetch("http://127.0.0.1:8000/api/send-otp", {
+      const response = await fetch("http://127.0.0.1:8000/auth/send-otp", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email }),
@@ -98,7 +98,7 @@ const OTPForgotPassword = () => {
 
     setLoading(true);
     try {
-      const response = await fetch("http://127.0.0.1:8000/api/verify-otp", {
+      const response = await fetch("http://127.0.0.1:8000/auth/verify-otp", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email, otp: trimmedOtp }),
@@ -138,7 +138,7 @@ const OTPForgotPassword = () => {
 
     setLoading(true);
     try {
-      const response = await fetch("http://127.0.0.1:8000/api/reset-password-with-otp", {
+      const response = await fetch("http://127.0.0.1:8000/auth/reset-password-with-otp", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ reset_token: resetToken, new_password: newPassword }),
@@ -147,7 +147,6 @@ const OTPForgotPassword = () => {
       const data = await response.json();
       if (data.status === "success") {
         toast.success("Password reset successfully!");
-        // Redirect to sign in page after 2 seconds
         setTimeout(() => {
           window.location.href = "/signin";
         }, 2000);

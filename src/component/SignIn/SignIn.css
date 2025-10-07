@@ -1,4 +1,4 @@
-/* Common body and container */
+
 body {
   margin: 0;
   font-family: Arial, sans-serif;
@@ -66,7 +66,6 @@ select:focus {
   color: red;
 }
 
-/* Button */
 .btn-submits {
   padding: 12px;
   border: none;
@@ -84,7 +83,6 @@ select:focus {
   background-color: #357ab8;
 }
 
-/* Links */
 .links-rows {
   margin-top: 12px;
   font-size: 0.9rem;

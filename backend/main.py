@@ -111,7 +111,7 @@ def send_email_bg(to_email: str, subject: str, body: str):
     except Exception as e:
         print(f"[ERROR] Failed to send email: {str(e)}")
 
-@app.post("/api/signup")
+@app.post("/auth/signup")
 async def signup(user_data: dict, db: Session = Depends(get_db), background_tasks: BackgroundTasks = None):
     try:
         fullname = user_data.get("fullname", "").strip()
@@ -174,7 +174,7 @@ async def signup(user_data: dict, db: Session = Depends(get_db), background_task
         return JSONResponse(status_code=500, content={"status": "error", "message": f"Registration failed: {str(e)}"})
 
 # SIGNIN
-@app.post("/api/signin")
+@app.post("/auth/signin")
 async def signin(credentials: dict, db: Session = Depends(get_db)):
     try:
         email = credentials.get("email", "").strip().lower()
@@ -191,7 +191,7 @@ async def signin(credentials: dict, db: Session = Depends(get_db)):
     except Exception as e:
         return JSONResponse(status_code=500, content={"status": "error", "message": f"Login failed: {str(e)}"})
 
-@app.post("/api/forgot-password")
+@app.post("/auth/forgot-password")
 async def forgot_password(request: dict, db: Session = Depends(get_db), background_tasks: BackgroundTasks = None):
     try:
         email = request.get("email", "").strip().lower()
@@ -220,7 +220,7 @@ async def forgot_password(request: dict, db: Session = Depends(get_db), backgrou
         db.rollback()
         return JSONResponse(status_code=500, content={"status": "error", "message": f"Error: {str(e)}"})
 
-@app.post("/api/send-otp")
+@app.post("/auth/send-otp")
 async def send_otp(request: dict, db: Session = Depends(get_db), background_tasks: BackgroundTasks = None):
     try:
         email = request.get("email", "").strip().lower()
@@ -249,7 +249,7 @@ async def send_otp(request: dict, db: Session = Depends(get_db), background_task
         db.rollback()
         return JSONResponse(status_code=500, content={"status": "error", "message": f"Error: {str(e)}"})
 
-@app.post("/api/verify-otp")
+@app.post("/auth/verify-otp")
 async def verify_otp(request: dict, db: Session = Depends(get_db)):
     try:
         email = request.get("email", "").strip().lower()
@@ -275,7 +275,7 @@ async def verify_otp(request: dict, db: Session = Depends(get_db)):
         return JSONResponse(status_code=500, content={"status": "error", "message": f"Error: {str(e)}"})
 
 
-@app.post("/api/reset-password-with-otp")
+@app.post("/auth/reset-password-with-otp")
 async def reset_password_with_otp(request: dict, db: Session = Depends(get_db)):
     try:
         reset_token = request.get("reset_token")
@@ -298,7 +298,7 @@ async def reset_password_with_otp(request: dict, db: Session = Depends(get_db)):
         db.rollback()
         return JSONResponse(status_code=500, content={"status": "error", "message": f"Error: {str(e)}"})
 
-@app.get("/api/dashboard")
+@app.get("/dashboard")
 async def get_dashboard_data(email: str = Depends(verify_token), db: Session = Depends(get_db)):
     try:
         user = db.query(User).filter(User.email == email).first()
@@ -634,10 +634,6 @@ async def delete_expense(expense_id: int, email: str = Depends(verify_token), db
 @app.get("/api/health")
 async def health_check():
     return {"status": "healthy", "message": "Expense Tracker API is running"}
-
-@app.get("/")
-async def root():
-    return {"message": "Welcome to Expense Tracker API"}
 
 if __name__ == "__main__":
     import uvicorn
