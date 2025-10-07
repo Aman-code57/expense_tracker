@@ -152,7 +152,7 @@ body {
 }
 
 
-.income-containers h2 {
+/* .income-containers h2 {
   text-align: center;
   margin-bottom: 20px;
   font-size: 28px;
@@ -204,7 +204,7 @@ body {
   background-color: white;
   border-color: #2196f3;
   box-shadow: 0 0 6px rgba(33,150,243,0.3);
-}
+} */
 
 
 .search-container {
@@ -298,20 +298,22 @@ body {
 }
 
 
-@media (max-width: 1024px) {
-  .custom-tabled th, .custom-tabled td { font-size: 13px; padding: 12px; }
-}
-
-@media (max-width: 768px) {
-  .search-container input { width: 100%; margin-top: 10px; }
-  .custom-tabled th, .custom-tabled td { font-size: 12px; padding: 10px; }
-  .header-buttons { flex-direction: column; gap: 10px; }
-  .income-forming { flex-direction: column; }
-}
-
 .error {
   color: #f44336;
   font-size: 12px;
   margin-top: 5px;
   display: block;
+}
+.btn-primaryss{
+  width: 200px;
+  color: whitesmoke;
+  background-color: green;
+  margin-left: 1100px;
+}
+.btn-secondaryss{
+  width: 200px;
+  color: whitesmoke;
+  background-color: gray;
+  margin-left: 1100px;
+
 }

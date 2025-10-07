@@ -2,7 +2,7 @@ import React, { useState, useRef, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
-import InputField from "./Inputfield";
+import InputField from "../InputField";
 import Navbar from "../Navbar";
 import "./SignIn.css";
 
@@ -122,6 +122,7 @@ const SignIn = () => {
               handleChange={handleChange}
               handleBlur={handleBlur}
               inputRef={refs[field.name]}
+              containerClass="input-con"
             />
           ))}
 

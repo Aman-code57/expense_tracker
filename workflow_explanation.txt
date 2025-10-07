@@ -1,0 +1,55 @@
+our expense tracker app is a full-stack web application built with React (frontend) and FastAPI (backend), using MySQL for data storage. Below is a detailed explanation of the workflow and file connections based on scanning the codebase.
+
+### Overall Workflow
+1. **User Authentication**: Users sign up or sign in via the frontend. The frontend calls backend auth endpoints (e.g., `/auth/signin`), receives a JWT token, and stores it in localStorage for session management.
+2. **Protected Access**: Authenticated users access the dashboard, income, and expense management pages. Routes are protected by `PrivateRoute` (checks for token) or `PublicRoute` (redirects if token exists).
+3. **Dashboard View**: Displays summary data (total spent/income, charts, recent expenses) fetched from the backend `/dashboard` endpoint.
+4. **Income/Expense Management**: Users can view, add, edit, or delete incomes/expenses via dedicated pages. These pages fetch data from `/api/incomes` or `/api/expenses` and use reusable components for forms and tables.
+5. **Data Persistence**: All CRUD operations are handled by the backend, which interacts with the MySQL database via SQLAlchemy models.
+
+### File Connections and Structure
+The app is organized into frontend (`src/`) and backend (`backend/`) directories. Key connections are via imports, API calls, and shared components.
+
+#### Frontend (`src/`)
+- **Entry Point**: `src/main.jsx` → Renders `App.jsx` (root component).
+- **Routing**: `src/App.jsx` → Defines routes using React Router. Imports and renders components like `SignIn`, `Dashboard`, `Income`, `Expense`. Uses `PrivateRoute` and `PublicRoute` for auth checks.
+  - `src/component/PrivateRoute.jsx` → Checks `localStorage` for `access_token`; redirects to `/signin` if missing.
+  - `src/component/PublicRoute.jsx` → Redirects to `/dashboard` if token exists.
+- **Authentication Components**:
+  - `src/component/SignIn/SignIn.jsx` → Calls `/auth/signin` API, stores token on success. Imports `InputField` and `Navbar`.
+  - `src/component/SiginUp/SignUp.jsx` → Calls `/auth/signup` API.
+  - `src/component/ForgotPassword/` → Handles password reset via OTP/email (calls `/auth/forgot-password`, `/auth/send-otp`, etc.).
+- **Dashboard Components**:
+  - `src/component/Dashboard/Dashboard.jsx` → Fetches from `/dashboard` API. Displays charts (using Chart.js), summary cards, and recent expenses table. Imports `utils.js` for currency formatting.
+  - `src/component/Dashboard/Income.jsx` → Manages incomes: Fetches from `/api/incomes`, uses `Layout`, `Form`, and `DataTable` for UI. Calls CRUD APIs.
+  - `src/component/Dashboard/Expense.jsx` → Similar to Income, but for expenses: Fetches from `/api/expenses`.
+  - `src/component/Dashboard/utils.js` → Utility for formatting Indian currency (used in Dashboard, Income, Expense).
+- **Shared/Reusable Components**:
+  - `src/component/Layout.jsx` → Provides common navbar, sidebar, and main content layout (used in Income and Expense pages).
+  - `src/component/Form.jsx` → Reusable form component with validation (used in Income and Expense for add/edit).
+  - `src/component/DataTable.jsx` → Reusable table with search, sort, pagination (used in Income and Expense).
+  - `src/component/InputField.jsx` → Reusable input field (used in Form and auth components).
+  - `src/component/Navbar.jsx` → Common navbar (used in auth pages).
+- **Styling**: CSS files like `src/App.css`, `src/component/Form.css`, `src/component/Dashboard/dashboard.css`, etc., style respective components.
+- **Assets/Config**: `src/assets/`, `tailwind.config.js`, `vite.config.js` for build setup.
+
+#### Backend (`backend/`)
+- **Entry Point**: `backend/main.py` → FastAPI app with CORS, auth, and API endpoints. Imports models and database setup.
+- **Database**:
+  - `backend/database.py` → SQLAlchemy engine/session setup for MySQL.
+  - `backend/models.py` → Defines `User`, `Expense`, `Income` models with relationships (User has many Expenses/Incomes).
+- **API Endpoints** (in `main.py`):
+  - Auth: `/auth/signup`, `/auth/signin`, `/auth/forgot-password`, etc. → Handle user registration/login, JWT token generation.
+  - Dashboard: `/dashboard` → Aggregates user data (totals, trends, breakdowns) from Expenses/Incomes.
+  - Incomes: `/api/incomes` (GET/POST/PUT/DELETE) → CRUD for incomes, linked to User via `user_id`.
+  - Expenses: `/api/expenses` (GET/POST/PUT/DELETE) → CRUD for expenses, linked to User.
+- **Dependencies**: `backend/requirements.txt` lists packages like FastAPI, SQLAlchemy, Passlib, etc.
+
+#### Key Connections
+- **Frontend ↔ Backend**: Frontend components call backend APIs (e.g., `fetch("http://127.0.0.1:8000/auth/signin")`). Auth uses JWT tokens in headers.
+- **Components Reuse**: `Layout`, `Form`, `DataTable` are shared across Income/Expense for consistency.
+- **Data Flow**: User actions (e.g., add expense) → Frontend form → API call → Backend validation/DB update → Response → Frontend update.
+- **Styling**: Tailwind CSS for utility classes, custom CSS for components.
+- **Build/Run**: `package.json` for frontend deps/scripts; `vite.config.js` for dev server. Backend runs via `uvicorn` on port 8000.
+
+This setup ensures modular, reusable code with clear separation of concerns. If you need details on specific files or want to test/run the app, let me know.

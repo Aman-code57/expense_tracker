@@ -1,0 +1,31 @@
+.form-container {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  background-color: wheat;
+  color: black !important;
+  padding: 20px;
+  border-radius: 12px;
+  box-shadow: 0 6px 15px black(0, 0, 0, 0.08);
+  width: 500px;
+  margin-left: 300px;
+  /* height: 80vh;
+  margin-bottom: 100px; */
+  margin-top: -50px;
+}
+
+.form-buttons {
+  display: flex;
+  margin-left: -500px;
+  justify-content: flex-start;
+  margin-top: 10px;
+}
+.btn-primaryer{
+  width: 210px;
+  margin-left: 800px;
+  color: white;
+  background-color: green;
+  
+}
+
+

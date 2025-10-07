@@ -346,3 +346,17 @@ body, html {
   color:blue;
 }
 
+.btn-primary{
+  width: 200px;
+  color: whitesmoke;
+  background-color: green;
+  margin-left: 1100px;
+}
+
+.btn-secondary{
+  width: 200px;
+  color: whitesmoke;
+  background-color: gray;
+  margin-left: 1100px;
+
+}

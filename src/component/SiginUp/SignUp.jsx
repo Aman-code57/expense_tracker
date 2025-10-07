@@ -3,7 +3,7 @@ import { Link } from "react-router-dom";
 import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import "./SignUp.css";
-import InputField from "./Inputfield";
+import InputField from "../InputField";
 import Navbar from "../Navbar";
 
 const validateField = (name, value, formData) => {

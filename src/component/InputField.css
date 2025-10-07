@@ -1,0 +1,45 @@
+.input-container {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  text-align: left;
+}
+
+label {
+  font-weight: 600;
+  margin-bottom: 5px;
+  color: #333;
+}
+
+input,
+select {
+  padding: 10px;
+  border-radius: 6px;
+  border: 1px solid #ccc;
+  font-size: 1rem;
+  outline: none;
+  transition: border 0.2s;
+  width: 100%;
+  box-sizing: border-box;
+  background-color: white;
+  color: black;
+}
+
+input:focus,
+select:focus {
+  border-color: #4a90e2;
+}
+
+.error {
+  color: red;
+  font-size: 0.85rem;
+  margin-top: 3px;
+}
+
+.required {
+  color: red;
+}
+
+select {
+  cursor: pointer;
+}
